@@ -1,0 +1,157 @@
+# docker-compose.yml
+
+services:
+  postgres_db:
+    image: postgres:16-alpine
+    volumes:
+      - postgres_db_data:/var/lib/postgresql/data
+    ports:
+      # A host portja a .env-ből, a konténer portja a .env-ből
+      - "${POSTGRES_HOST_PORT}:${DB_PORT}"
+    environment:
+      POSTGRES_DB: ${DB_NAME}
+      POSTGRES_USER: ${DB_USERNAME}
+      POSTGRES_PASSWORD: ${DB_PASSWORD}
+    labels:
+      - "io.vendure.create.name=vendure-default"
+    healthcheck: # Healthcheck a függőségek miatt
+      test: ["CMD-SHELL", "pg_isready -U ${DB_USERNAME} -d ${DB_NAME}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_HOST_PORT}:${REDIS_PORT}"
+    volumes:
+      - redis_data:/data
+    labels:
+      - "io.vendure.create.name=vendure-default"
+    healthcheck: # Healthcheck a függőségek miatt
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
+
+  elasticsearch_db: # Új szolgáltatás neve
+    image: elasticsearch:7.17.10 # Használjunk egy specifikus 7.x verziót, amit a plugin támogat
+    volumes:
+      - elasticsearch_data:/usr/share/elasticsearch/data
+    ports:
+      - "${ELASTICSEARCH_HOST_PORT}:${ELASTICSEARCH_PORT}"
+    environment:
+    # A legtöbb ES konténernek szüksége van erre a production módban
+      discovery.type: single-node
+    # Ha be akarsz állítani jelszót:
+    # xpack.security.enabled: "true"
+    # ELASTIC_PASSWORD: ${ELASTICSEARCH_PASSWORD}
+    labels:
+      - "io.vendure.create.name=vendure-default"
+    healthcheck: # Healthcheck a függőségek miatt
+      test: ["CMD-SHELL", "curl -f http://localhost:${ELASTICSEARCH_PORT} || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 20s
+
+
+  vendure-server:
+    build: . # A Dockerfile-t használja az image elkészítéséhez
+    ports:
+      - "${PORT}:${PORT}" # API port a .env-ből
+    environment:
+      # Itt adjuk át a .env változóit a Vendure konténernek
+      DB_TYPE: ${DB_TYPE}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SCHEMA: ${DB_SCHEMA}
+
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+
+      ELASTICSEARCH_HOST: ${ELASTICSEARCH_HOST}
+      ELASTICSEARCH_PORT: ${ELASTICSEARCH_PORT}
+      # Ha van auth:
+      # ELASTICSEARCH_USERNAME: ${ELASTICSEARCH_USERNAME}
+      # ELASTICSEARCH_PASSWORD: ${ELASTICSEARCH_PASSWORD}
+      # ----------------------------------------------------------
+
+      PORT: ${PORT} # A Vendure belső portja
+      APP_ENV: ${APP_ENV}
+      COOKIE_SECRET: ${COOKIE_SECRET}
+      SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD}
+
+    depends_on: # Várja meg, amíg a függőségek készen állnak
+      postgres_db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch_db: 
+        condition: service_healthy
+    command: npm run start:server # A szerver indító parancsa
+    healthcheck:
+      test: ["CMD-SHELL", "curl -f http://localhost:${PORT}/shop-api || exit 1"] # Ellenőrzi, hogy a Vendure API elérhető-e
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 30s # Ad időt a Vendure-nek az inicializálásra
+
+  vendure-worker:
+    build: .
+    environment:
+      # Ugyanazok a környezeti változók, mint a szervernek
+      DB_TYPE: ${DB_TYPE}
+      DB_HOST: ${DB_HOST}
+      DB_PORT: ${DB_PORT}
+      DB_NAME: ${DB_NAME}
+      DB_USERNAME: ${DB_USERNAME}
+      DB_PASSWORD: ${DB_PASSWORD}
+      DB_SCHEMA: ${DB_SCHEMA}
+
+      REDIS_HOST: ${REDIS_HOST}
+      REDIS_PORT: ${REDIS_PORT}
+
+      ELASTICSEARCH_HOST: ${ELASTICSEARCH_HOST}
+      ELASTICSEARCH_PORT: ${ELASTICSEARCH_PORT}
+      # Ha van auth:
+      # ELASTICSEARCH_USERNAME: ${ELASTICSEARCH_USERNAME}
+      # ELASTICSEARCH_PASSWORD: ${ELASTICSEARCH_PASSWORD}
+      # 
+
+      PORT: ${PORT} # A workernek is szüksége van a portra
+      APP_ENV: ${APP_ENV}
+      COOKIE_SECRET: ${COOKIE_SECRET}
+      SUPERADMIN_USERNAME: ${SUPERADMIN_USERNAME}
+      SUPERADMIN_PASSWORD: ${SUPERADMIN_PASSWORD}
+
+    depends_on:
+      postgres_db:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      elasticsearch_db:
+        condition: service_healthy
+      vendure-server:
+        condition: service_healthy # Várja meg, amíg a szerver elindul
+    command: npm run start:worker # A worker indító parancsa
+
+volumes:
+  postgres_db_data:
+    driver: local
+    labels:
+      - "io.vendure.create.name=vendure-default"
+  redis_data:
+    driver: local
+    labels:
+      - "io.vendure.create.name=vendure-default"
+  elasticsearch_data: 
+    driver: local
+    labels:
+      - "io.vendure.create.name=vendure-default"
