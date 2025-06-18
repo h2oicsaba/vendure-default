@@ -49,6 +49,8 @@ jspm_packages/
 # TypeScript cache
 *.tsbuildinfo
 
+# Megtartjuk a .windsurf könyvtárat, mert projekt-specifikus beállításokat tartalmaz
+
 # Optional npm cache directory
 .npm
 

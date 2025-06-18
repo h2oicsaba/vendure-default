@@ -1,6 +1,5 @@
-import { PluginCommonModule, VendurePlugin, Type } from '@vendure/core';
-import { OnApplicationBootstrap } from '@nestjs/common';
-import { AssetEvent, EventBus } from '@vendure/core';
+import { PluginCommonModule, VendurePlugin, Type, AssetEvent, EventBus } from '@vendure/core';
+import { Injectable, OnApplicationBootstrap } from '@nestjs/common';
 import { AssetSyncService } from './asset-sync.service';
 
 /**
@@ -37,19 +36,12 @@ export class AssetSyncPlugin implements OnApplicationBootstrap {
         return AssetSyncPlugin;
     }
 
-    /**
-     * Visszaadja a beállított opciókat
-     */
-    static getOptions(): AssetSyncOptions {
-        return this.options;
-    }
-
     async onApplicationBootstrap() {
-        // Subscribe to asset created events
+        // Subscribe to asset events
         this.eventBus.ofType(AssetEvent).subscribe(event => {
             if (event.type === 'created' || event.type === 'updated') {
                 // Asset was created or updated, sync it to VPS
-                this.assetSyncService.syncAssetToVps(event.asset).catch(err => {
+                this.assetSyncService.syncAssetToVps(event.asset).catch((err: Error) => {
                     console.error(`Failed to sync asset ${event.asset.id} to VPS:`, err instanceof Error ? err.message : String(err));
                 });
             }

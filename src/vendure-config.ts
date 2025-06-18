@@ -19,8 +19,8 @@ import path from 'path';
 import { BullMQJobQueuePlugin } from '@vendure/job-queue-plugin/package/bullmq/plugin'; // <-- EZ AZ ÚJ SOR
 import { ElasticsearchPlugin } from '@vendure/elasticsearch-plugin'; // EZ AZ ÚJ IMPORT!
 
-// Asset feltöltés webhook plugin import
-import { AssetUploadWebhookPlugin } from './asset-upload-webhook.plugin';
+// VPS Asset plugin import
+import { AssetUploadWebhookPlugin, AssetSyncPlugin } from './plugins/vps_assets';
 
 // ----------------------------------------------------
 
@@ -98,8 +98,16 @@ export const config: VendureConfig = {
         }),
         // --------------------------------------------------------------------
 
-        // Asset feltöltés webhook plugin a VPS-re
-        AssetUploadWebhookPlugin,
+        // VPS Asset pluginek - asset feltöltés és szinkronizáció
+        AssetUploadWebhookPlugin.init({
+            // VPS URL beállítása környezeti változóból, vagy az alapértelmezett érték használata
+            vpsUploadUrl: process.env.VPS_UPLOAD_URL || 'http://91.99.75.89:3000/upload',
+            // Timeout beállítása milliszekundumban
+            timeout: process.env.VPS_UPLOAD_TIMEOUT ? parseInt(process.env.VPS_UPLOAD_TIMEOUT) : 10000,
+        }),
+        
+        // Asset szinkronizációs plugin
+        AssetSyncPlugin,
 
         EmailPlugin.init({
             devMode: true, // Élesben ez false legyen
