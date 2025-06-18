@@ -1,29 +1,33 @@
 // src/vendure-config.ts
 
-import {
-    dummyPaymentHandler,
-    DefaultJobQueuePlugin,
-    DefaultSchedulerPlugin,
-    DefaultSearchPlugin,
-    VendureConfig,
-} from '@vendure/core';
-import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
-import { AssetServerPlugin } from '@vendure/asset-server-plugin';
-import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
-import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import 'dotenv/config'; // Fontos, hogy ez legyen az ELSŐ import, hogy a .env változók betöltődjenek
 import path from 'path';
 
-// --- Új importok a Redis és Typesense pluginekhez ---
-import { BullMQJobQueuePlugin } from '@vendure/job-queue-plugin/package/bullmq/plugin'; // <-- EZ AZ ÚJ SOR
-import { ElasticsearchPlugin } from '@vendure/elasticsearch-plugin'; // EZ AZ ÚJ IMPORT!
+import {
+    dummyPaymentHandler,
+    DefaultJobQueuePlugin,
+    DefaultSearchPlugin,
+    VendureConfig,
+    DefaultSchedulerPlugin
+} from '@vendure/core';
+import { BullMQJobQueuePlugin } from '@vendure/job-queue-plugin/package/bullmq';
+import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
+import { AssetServerPlugin } from '@vendure/asset-server-plugin';
+import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
+import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
+import { ElasticsearchPlugin } from '@vendure/elasticsearch-plugin';
 
-// VPS Asset plugin import
-import { AssetUploadWebhookPlugin, AssetSyncPlugin } from './plugins/vps_assets';
+// VPS Asset pluginek importálása
+import { AssetSyncPlugin } from './plugins/vps_assets/asset-sync.plugin';
+import { AssetUploadWebhookPlugin } from './plugins/vps_assets/asset-upload-webhook.plugin';
 
 // ----------------------------------------------------
 
+// Konfigurációs választók a környezeti változókból
 const IS_DEV = process.env.APP_ENV === 'dev';
+const USE_VPS_UPLOAD = process.env.USE_VPS_UPLOAD === 'advanced';
+const USE_ADVANCED_JOB_QUEUE = process.env.USE_JOB_QUEUE === 'advanced';
+const USE_ADVANCED_SEARCH = process.env.USE_SEARCH === 'advanced';
 const serverPort = +process.env.PORT! || 3000; // Használjuk a .env-ből érkező PORT-ot
 
 export const config: VendureConfig = {
@@ -71,47 +75,47 @@ export const config: VendureConfig = {
         AssetServerPlugin.init({
             route: 'assets',
             assetUploadDir: path.join(__dirname, '../static/assets'),
-            // Az assetUrlPrefix beállítása IS_DEV alapján
-            assetUrlPrefix: IS_DEV ? undefined : 'https://www.my-shop.com/assets/', // Cseréld erre a saját éles URL-edet!
+            // Az assetUrlPrefix beállítása környezeti változóból
+            assetUrlPrefix: USE_VPS_UPLOAD ? process.env.ASSET_URL_PREFIX : undefined,
         }),
         DefaultSchedulerPlugin.init(),
 
-        // Fejlesztői környezetben a default pluginokat használjuk, production-ben a speciálisakat
-        ...(IS_DEV ? [
-            // Default pluginek fejlesztői környezetben - importáljuk őket
+        // Job Queue plugin kiválasztása a környezeti változó alapján
+        ...(USE_ADVANCED_JOB_QUEUE ? [
+            BullMQJobQueuePlugin.init({
+                connection: {
+                    host: process.env.REDIS_HOST || 'localhost',
+                    port: +(process.env.REDIS_PORT || 6379),
+                }
+            })
+        ] : [
             DefaultJobQueuePlugin.init({
                 useDatabaseForBuffer: true,
-            }),
-            DefaultSearchPlugin.init({
-                bufferUpdates: false,
-                indexStockStatus: true,
-            }),
-        ] : [
-            // Speciális pluginek production környezetben
-            // --- JobQueuePlugin (Redis-szel) lecseréli a DefaultJobQueuePlugin-t ---
-            BullMQJobQueuePlugin.init({
-                connection: { // A BullMQJobQueuePlugin.init közvetlenül a connection-t várja!
-                    host: process.env.REDIS_HOST,
-                    port: +process.env.REDIS_PORT!,
-                    // password: process.env.REDIS_PASSWORD, // Add hozzá, ha a Redisnek van jelszava
-                }
-            }),
-            // lecseréli a DefaultSearchPlugin-t ---
-            // --- ElasticsearchPlugin inicializálása, a SearchPlugin-t nem kell külön importálni ---
+            })
+        ]),
+            
+        // Search plugin kiválasztása a környezeti változó alapján
+        ...(USE_ADVANCED_SEARCH ? [
             ElasticsearchPlugin.init({
-                host: process.env.ELASTICSEARCH_HOST,
-                port: +process.env.ELASTICSEARCH_PORT!,
+                host: process.env.ELASTICSEARCH_HOST || 'localhost',
+                port: +(process.env.ELASTICSEARCH_PORT || 9200),
                 // username: process.env.ELASTICSEARCH_USERNAME, // Ha használsz auth-ot
                 // password: process.env.ELASTICSEARCH_PASSWORD, // Ha használsz auth-ot
-            }),
+            })
+        ] : [
+            DefaultSearchPlugin
         ]),
-        AssetUploadWebhookPlugin.init({
-            // VPS URL beállítása környezeti változóból, vagy az alapértelmezett érték használata
-            vpsUploadUrl: process.env.VPS_UPLOAD_URL || 'http://91.99.75.89:3000/upload',
-            // Timeout beállítása milliszekundumban
-            timeout: process.env.VPS_UPLOAD_TIMEOUT ? parseInt(process.env.VPS_UPLOAD_TIMEOUT) : 10000,
-        }),
-        AssetSyncPlugin.init(),
+            
+        // VPS asset pluginek használata, ha USE_VPS_UPLOAD=advanced
+        ...(USE_VPS_UPLOAD ? [
+            AssetSyncPlugin,
+            AssetUploadWebhookPlugin.init({
+                vpsUploadUrl: process.env.VPS_UPLOAD_URL ? process.env.VPS_UPLOAD_URL : (() => {
+                    throw new Error('VPS_UPLOAD_URL környezeti változó nincs beállítva!');
+                })(),
+                timeout: process.env.VPS_UPLOAD_TIMEOUT ? parseInt(process.env.VPS_UPLOAD_TIMEOUT) : 10000,
+            })
+        ] : []),
 
         EmailPlugin.init({
             devMode: IS_DEV as true, // TypeScript cast, hogy elfogadja a boolean értéket
