@@ -2,10 +2,9 @@
 
 import {
     dummyPaymentHandler,
-    // Az alapértelmezett plugineket már nem importáljuk, helyette a BullMQ és Typesense plugineket használjuk
-    // DefaultJobQueuePlugin, 
+    DefaultJobQueuePlugin,
     DefaultSchedulerPlugin,
-    // DefaultSearchPlugin,
+    DefaultSearchPlugin,
     VendureConfig,
 } from '@vendure/core';
 import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
@@ -77,40 +76,45 @@ export const config: VendureConfig = {
         }),
         DefaultSchedulerPlugin.init(),
 
-        // --- JobQueuePlugin (Redis-szel) lecseréli a DefaultJobQueuePlugin-t ---
-        BullMQJobQueuePlugin.init({
-            connection: { // A BullMQJobQueuePlugin.init közvetlenül a connection-t várja!
-                host: process.env.REDIS_HOST,
-                port: +process.env.REDIS_PORT!,
-                 // password: process.env.REDIS_PASSWORD, // Add hozzá, ha a Redisnek van jelszava
-            }
-        }),        
-        // ---------------------------------------------------------------------
-
-        // lecseréli a DefaultSearchPlugin-t ---
-          // --- ElasticsearchPlugin inicializálása, a SearchPlugin-t nem kell külön importálni ---
-        ElasticsearchPlugin.init({
-            host: process.env.ELASTICSEARCH_HOST,
-            port: +process.env.ELASTICSEARCH_PORT!,
-            // username: process.env.ELASTICSEARCH_USERNAME, // Ha használsz auth-ot
-            // password: process.env.ELASTICSEARCH_PASSWORD, // Ha használsz auth-ot
-            
-        }),
-        // --------------------------------------------------------------------
-
-        // VPS Asset pluginek - asset feltöltés és szinkronizáció
+        // Fejlesztői környezetben a default pluginokat használjuk, production-ben a speciálisakat
+        ...(IS_DEV ? [
+            // Default pluginek fejlesztői környezetben - importáljuk őket
+            DefaultJobQueuePlugin.init({
+                useDatabaseForBuffer: true,
+            }),
+            DefaultSearchPlugin.init({
+                bufferUpdates: false,
+                indexStockStatus: true,
+            }),
+        ] : [
+            // Speciális pluginek production környezetben
+            // --- JobQueuePlugin (Redis-szel) lecseréli a DefaultJobQueuePlugin-t ---
+            BullMQJobQueuePlugin.init({
+                connection: { // A BullMQJobQueuePlugin.init közvetlenül a connection-t várja!
+                    host: process.env.REDIS_HOST,
+                    port: +process.env.REDIS_PORT!,
+                    // password: process.env.REDIS_PASSWORD, // Add hozzá, ha a Redisnek van jelszava
+                }
+            }),
+            // lecseréli a DefaultSearchPlugin-t ---
+            // --- ElasticsearchPlugin inicializálása, a SearchPlugin-t nem kell külön importálni ---
+            ElasticsearchPlugin.init({
+                host: process.env.ELASTICSEARCH_HOST,
+                port: +process.env.ELASTICSEARCH_PORT!,
+                // username: process.env.ELASTICSEARCH_USERNAME, // Ha használsz auth-ot
+                // password: process.env.ELASTICSEARCH_PASSWORD, // Ha használsz auth-ot
+            }),
+        ]),
         AssetUploadWebhookPlugin.init({
             // VPS URL beállítása környezeti változóból, vagy az alapértelmezett érték használata
             vpsUploadUrl: process.env.VPS_UPLOAD_URL || 'http://91.99.75.89:3000/upload',
             // Timeout beállítása milliszekundumban
             timeout: process.env.VPS_UPLOAD_TIMEOUT ? parseInt(process.env.VPS_UPLOAD_TIMEOUT) : 10000,
         }),
-        
-        // Asset szinkronizációs plugin
-        AssetSyncPlugin,
+        AssetSyncPlugin.init(),
 
         EmailPlugin.init({
-            devMode: true, // Élesben ez false legyen
+            devMode: IS_DEV as true, // TypeScript cast, hogy elfogadja a boolean értéket
             outputPath: path.join(__dirname, '../static/email/test-emails'),
             route: 'mailbox',
             handlers: defaultEmailHandlers,
@@ -125,10 +129,7 @@ export const config: VendureConfig = {
         }),
         AdminUiPlugin.init({
             route: 'admin',
-            // Fontos: a portot a Vendure szerver portjához viszonyítjuk
-            // Ha a Vendure szerver 3000-es porton fut, az Admin UI a 3002-esen lesz elérhető,
-            // de ha Dockerben futtatod, a Docker Compose fájlban kell a port map-et kezelni.
-            port: serverPort,
+            port: 3002,
             adminUiConfig: {
                 apiPort: serverPort, // Az Admin UI hívja a Vendure API-t ezen a porton
             },

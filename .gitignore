@@ -14,8 +14,8 @@ build/
 .serverless/
 
 # Environment variables
-.env
-.env.*
+#nv
+#env.*
 !.env.example
 
 # IDE and editor files
