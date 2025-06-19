@@ -129,7 +129,7 @@ sudo journalctl -u minio -f
 ## 6. Nginx Konfiguráció
 
 ```bash
-sudo nano /etc/nginx/sites-available/minio.need_shit.fun
+sudo nano /etc/nginx/sites-available/minio.need-shit.fun
 ```
 
 Tartalma:
@@ -137,7 +137,7 @@ Tartalma:
 # MinIO API és static fájlok
 server {
     listen 80;
-    server_name minio.need_shit.fun;
+    server_name minio.need-shit.fun;
 
     # Fájl feltöltés méret limit (termékképekhez)
     client_max_body_size 100M;
@@ -160,7 +160,7 @@ server {
 # MinIO Admin Console (opcionális)
 server {
     listen 80;
-    server_name minio-admin.need_shit.fun;
+    server_name admin.need-shit.fun;  # Változtasd meg a domain nevet, ha szükséges
 
     location / {
         proxy_pass http://127.0.0.1:9001;
@@ -179,7 +179,7 @@ server {
 
 ```bash
 # Site engedélyezése
-sudo ln -s /etc/nginx/sites-available/minio.need_shit.fun /etc/nginx/sites-enabled/
+sudo ln -s /etc/nginx/sites-available/minio.need-shit.fun /etc/nginx/sites-enabled/
 sudo nginx -t
 sudo systemctl reload nginx
 ```
@@ -214,14 +214,43 @@ mc mb local/vendure-assets
 mc anonymous set public local/vendure-assets
 ```
 
-## 9. SSL Tanúsítvány (Certbot)
+## 9. DNS Propagáció és SSL Tanústvány (Certbot)
+
+### DNS Propagáció ellenőrzése
+
+Mielőtt SSL tanústványt igényelnél, győződj meg róla, hogy a DNS rekordok megfelelően propagálódtak:
+
+```bash
+# DNS propagáció ellenőrzése
+nslookup minio.need-shit.fun
+dig minio.need-shit.fun
+
+# Alternatív ellenőrzés online eszközzel
+# Látogass el: https://dnschecker.org/
+```
+
+A DNS propagáció akár 24-48 órát is igénybe vehet, bár általában gyorsabb.
+
+### SSL Tanústvány telepítése
 
 ```bash
 # Certbot telepítése
 sudo apt install certbot python3-certbot-nginx -y
 
-# SSL tanúsítvány kérése
-sudo certbot --nginx -d minio.need_shit.fun -d minio-admin.need_shit.fun
+# SSL tanústvány kérése csak a fő domain-re
+sudo certbot --nginx -d minio.need-shit.fun
+
+# Megjegyzés: Ha több domaint szeretnél hozzáadni, győződj meg róla, hogy érvényes domain neveket használsz
+# Például a kötőjel (-) problémát okozhat néhány esetben
+```
+
+### Alternatív megoldás
+
+Ha problémák lépnek fel a domain névvel, próbálj meg egy egyszerűbb nevet használni, például:
+
+```bash
+# Példa egyszerűbb domain nevekre
+sudo certbot --nginx -d minio.need-shit.fun -d admin.need-shit.fun
 ```
 
 ## 10. Monitoring és Karbantartás
@@ -249,22 +278,31 @@ A Vendure alkalmazásban a következő környezeti változókat kell beállítan
 USE_ASSET_STORAGE=advanced
 
 # Asset URL prefix - ahonnan a képek elérhetőek lesznek
-ASSET_URL_PREFIX=https://minio.need_shit.fun/vendure-assets/
+ASSET_URL_PREFIX=https://minio.need-shit.fun/vendure-assets/
 
 # S3/MinIO beállítások
 S3_BUCKET=vendure-assets
 S3_ACCESS_KEY_ID=admin
 S3_SECRET_ACCESS_KEY=YourSecurePassword123!
-S3_ENDPOINT=https://minio.need_shit.fun
+S3_ENDPOINT=https://minio.need-shit.fun
 S3_REGION=us-east-1
 S3_FORCE_PATH_STYLE=true
 ```
 
 ## 12. Hibaelhárítás
 
+### Domain név problémák
+
+Ha problémák lépnek fel a domain névvel (pl. a Let's Encrypt tanústvány igénylésekor):
+
+1. Ellenőrizd, hogy a domain név helyesen van-e írva (kötőjel használata, érvénytelen karakterek, stb.)
+2. Ellenőrizd, hogy a DNS rekordok megfelelően be vannak-e állítva és propagálódtak-e
+3. Próbálj egyszerűbb domain neveket használni (pl. kerüld a kötőjeleket vagy speciális karaktereket)
+4. Ellenőrizd a Let's Encrypt naplófájlokat: `sudo cat /var/log/letsencrypt/letsencrypt.log`
+
 ### CORS Problémák
 
-Ha CORS hibákat tapasztalsz, állítsd be a CORS szabályokat a MinIO-ban:
+Ha CORS hibákat tapasztalsz (pl. a képek nem jelennek meg a frontend oldalon), állítsd be a CORS szabályokat a MinIO-ban:
 
 ```bash
 # CORS konfiguráció létrehozása
