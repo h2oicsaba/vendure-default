@@ -2,6 +2,8 @@
 
 Ez a dokumentáció leírja, hogyan használhatod az S3-kompatibilis tárolókat (AWS S3, MinIO, DigitalOcean Spaces, stb.) a Vendure asset kezeléséhez.
 
+A megoldás a Vendure hivatalos dokumentációján alapul: [Vendure Asset Storage](https://docs.vendure.io/guides/getting-started/installation/).
+
 ## Miért érdemes S3-kompatibilis tárolót használni?
 
 A Railway és más modern felhő platformok gyakran nem támogatják a perzisztens köteteket, vagy azok használata korlátozott. Az S3-kompatibilis tárolók ideális megoldást jelentenek az assetok tárolására, mivel:

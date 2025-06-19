@@ -1,6 +1,6 @@
 import { AssetStorageStrategy, Logger, RequestContext } from '@vendure/core';
 import { createReadStream, ReadStream } from 'fs';
-import { GetObjectCommand, PutObjectCommand, S3Client } from '@aws-sdk/client-s3';
+import { GetObjectCommand, PutObjectCommand, DeleteObjectCommand, S3Client } from '@aws-sdk/client-s3';
 import { Readable } from 'stream';
 import path from 'path';
 
@@ -142,10 +142,10 @@ export class S3AssetStorageStrategy implements AssetStorageStrategy {
 
     async deleteFile(identifier: string): Promise<void> {
         try {
-            await this.s3Client.send({
+            await this.s3Client.send(new DeleteObjectCommand({
                 Bucket: this.bucket,
                 Key: identifier,
-            } as any);
+            }));
             
             Logger.debug(`Fájl törölve az S3-ról: ${identifier}`);
         } catch (err) {

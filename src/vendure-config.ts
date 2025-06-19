@@ -17,8 +17,8 @@ import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { ElasticsearchPlugin } from '@vendure/elasticsearch-plugin';
 
-// S3 Asset plugin importálása
-import { S3AssetPlugin } from './plugins/s3_assets';
+// Importáljuk a saját S3 asset storage stratégiánkat
+import { S3AssetStorageStrategy } from './plugins/s3_assets/s3-asset-storage-strategy';
 
 // ----------------------------------------------------
 
@@ -72,18 +72,39 @@ export const config: VendureConfig = {
     
     plugins: [
         GraphiqlPlugin.init(),
-        // Asset Server Plugin csak akkor, ha nem advanced asset kezelést használunk
-        ...(!USE_ADVANCED_ASSETS ? [
-            AssetServerPlugin.init({
-                route: 'assets',
-                assetUploadDir: path.join(__dirname, '../static/assets'),
-                // Az assetUrlPrefix beállítása környezeti változóból
-                assetUrlPrefix: undefined,
-            })
-        ] : []),
-        
-        // S3 Asset Plugin használata, ha USE_ASSET_STORAGE=advanced
-        ...(USE_ADVANCED_ASSETS ? [S3AssetPlugin] : []),
+        // Asset Server Plugin konfigurációja - különböző storage stratégiával a környezeti változók alapján
+        AssetServerPlugin.init({
+            route: 'assets',
+            assetUploadDir: path.join(__dirname, '../static/assets'),
+            // Ha advanced asset kezelést használunk, akkor S3 storage stratégiát konfigurálunk
+            ...(USE_ADVANCED_ASSETS ? {
+                storageStrategyFactory: () => {
+                    // Ellenőrizzük, hogy a szükséges környezeti változók be vannak-e állítva
+                    if (!process.env.S3_BUCKET) {
+                        throw new Error('S3_BUCKET környezeti változó nincs beállítva!');
+                    }
+                    if (!process.env.S3_ACCESS_KEY_ID) {
+                        throw new Error('S3_ACCESS_KEY_ID környezeti változó nincs beállítva!');
+                    }
+                    if (!process.env.S3_SECRET_ACCESS_KEY) {
+                        throw new Error('S3_SECRET_ACCESS_KEY környezeti változó nincs beállítva!');
+                    }
+                    
+                    return new S3AssetStorageStrategy({
+                        bucket: process.env.S3_BUCKET,
+                        credentials: {
+                            accessKeyId: process.env.S3_ACCESS_KEY_ID,
+                            secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+                        },
+                        endpoint: process.env.S3_ENDPOINT,
+                        region: process.env.S3_REGION,
+                        forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
+                        assetUrlPrefix: process.env.ASSET_URL_PREFIX,
+                    });
+                },
+                assetUrlPrefix: process.env.ASSET_URL_PREFIX,
+            } : {}),
+        }),
         DefaultSchedulerPlugin.init(),
 
         // Job Queue plugin kiválasztása a környezeti változó alapján
