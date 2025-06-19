@@ -17,15 +17,15 @@ import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { ElasticsearchPlugin } from '@vendure/elasticsearch-plugin';
 
-// VPS Asset pluginek importálása
-import { AssetSyncPlugin } from './plugins/vps_assets/asset-sync.plugin';
-import { AssetUploadWebhookPlugin } from './plugins/vps_assets/asset-upload-webhook.plugin';
+// S3 Asset plugin importálása
+import { S3AssetPlugin } from './plugins/s3_assets';
 
 // ----------------------------------------------------
 
 // Konfigurációs választók a környezeti változókból
 const IS_DEV = process.env.APP_ENV === 'dev';
-const USE_VPS_UPLOAD = process.env.USE_VPS_UPLOAD === 'advanced';
+const USE_ASSET_STORAGE = process.env.USE_ASSET_STORAGE || 'default';
+const USE_ADVANCED_ASSETS = USE_ASSET_STORAGE === 'advanced';
 const USE_ADVANCED_JOB_QUEUE = process.env.USE_JOB_QUEUE === 'advanced';
 const USE_ADVANCED_SEARCH = process.env.USE_SEARCH === 'advanced';
 const serverPort = +process.env.PORT! || 3000; // Használjuk a .env-ből érkező PORT-ot
@@ -72,12 +72,18 @@ export const config: VendureConfig = {
     
     plugins: [
         GraphiqlPlugin.init(),
-        AssetServerPlugin.init({
-            route: 'assets',
-            assetUploadDir: path.join(__dirname, '../static/assets'),
-            // Az assetUrlPrefix beállítása környezeti változóból
-            assetUrlPrefix: USE_VPS_UPLOAD ? process.env.ASSET_URL_PREFIX : undefined,
-        }),
+        // Asset Server Plugin csak akkor, ha nem advanced asset kezelést használunk
+        ...(!USE_ADVANCED_ASSETS ? [
+            AssetServerPlugin.init({
+                route: 'assets',
+                assetUploadDir: path.join(__dirname, '../static/assets'),
+                // Az assetUrlPrefix beállítása környezeti változóból
+                assetUrlPrefix: undefined,
+            })
+        ] : []),
+        
+        // S3 Asset Plugin használata, ha USE_ASSET_STORAGE=advanced
+        ...(USE_ADVANCED_ASSETS ? [S3AssetPlugin] : []),
         DefaultSchedulerPlugin.init(),
 
         // Job Queue plugin kiválasztása a környezeti változó alapján
@@ -106,16 +112,7 @@ export const config: VendureConfig = {
             DefaultSearchPlugin
         ]),
             
-        // VPS asset pluginek használata, ha USE_VPS_UPLOAD=advanced
-        ...(USE_VPS_UPLOAD ? [
-            AssetSyncPlugin,
-            AssetUploadWebhookPlugin.init({
-                vpsUploadUrl: process.env.VPS_UPLOAD_URL ? process.env.VPS_UPLOAD_URL : (() => {
-                    throw new Error('VPS_UPLOAD_URL környezeti változó nincs beállítva!');
-                })(),
-                timeout: process.env.VPS_UPLOAD_TIMEOUT ? parseInt(process.env.VPS_UPLOAD_TIMEOUT) : 10000,
-            })
-        ] : []),
+        // Itt volt korábban a VPS asset pluginek konfigurációja, de eltávolítottuk
 
         EmailPlugin.init({
             devMode: IS_DEV as true, // TypeScript cast, hogy elfogadja a boolean értéket

@@ -1,1 +1,0 @@
-Ez egy teszt fájl az asset szinkronizáció teszteléséhez.
