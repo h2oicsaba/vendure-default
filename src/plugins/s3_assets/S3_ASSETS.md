@@ -16,7 +16,15 @@ A Railway és más modern felhő platformok gyakran nem támogatják a perziszte
 
 ## Telepítés és konfigurálás
 
-### 1. Környezeti változók beállítása
+### 1. Szükséges csomagok telepítése
+
+A következő csomagokat kell telepíteni:
+
+```bash
+npm install @aws-sdk/client-s3 @aws-sdk/credential-providers --save
+```
+
+### 2. Környezeti változók beállítása
 
 A `.env` fájlban állítsd be a következő változókat:
 
@@ -40,7 +48,47 @@ S3_REGION=us-east-1
 S3_FORCE_PATH_STYLE=true
 ```
 
-### 2. MinIO szerver telepítése (opcionális, csak fejlesztéshez)
+### 3. Vendure konfiguráció
+
+A Vendure konfigurációban az `AssetServerPlugin` a következőképpen van beállítva:
+
+```typescript
+AssetServerPlugin.init({
+    route: 'assets',
+    assetUploadDir: path.join(__dirname, '../static/assets'),
+    // Ha advanced asset kezelést használunk, akkor S3 storage stratégiát konfigurálunk
+    ...(USE_ADVANCED_ASSETS ? {
+        storageStrategyFactory: () => {
+            // Ellenőrizzük, hogy a szükséges környezeti változók be vannak-e állítva
+            if (!process.env.S3_BUCKET) {
+                throw new Error('S3_BUCKET környezeti változó nincs beállítva!');
+            }
+            if (!process.env.S3_ACCESS_KEY_ID) {
+                throw new Error('S3_ACCESS_KEY_ID környezeti változó nincs beállítva!');
+            }
+            if (!process.env.S3_SECRET_ACCESS_KEY) {
+                throw new Error('S3_SECRET_ACCESS_KEY környezeti változó nincs beállítva!');
+            }
+            
+            return new S3AssetStorageStrategy({
+                bucket: process.env.S3_BUCKET,
+                credentials: {
+                    accessKeyId: process.env.S3_ACCESS_KEY_ID,
+                    secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
+                },
+                endpoint: process.env.S3_ENDPOINT,
+                region: process.env.S3_REGION,
+                forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
+                assetUrlPrefix: process.env.ASSET_URL_PREFIX,
+            });
+        },
+        // Az assetUrlPrefix beállítása környezeti változóból
+        assetUrlPrefix: process.env.ASSET_URL_PREFIX,
+    } : {}),
+})
+```
+
+### 4. MinIO szerver telepítése (opcionális, csak fejlesztéshez)
 
 Ha lokálisan szeretnéd tesztelni az S3 integrációt, telepíthetsz egy MinIO szervert Docker segítségével:
 
@@ -54,11 +102,11 @@ docker run -p 9000:9000 -p 9001:9001 --name minio \
 
 Ezután a MinIO adminfelülete elérhető lesz a http://localhost:9001 címen, és az S3 API a http://localhost:9000 címen.
 
-### 3. Bucket létrehozása
+### 5. Bucket létrehozása
 
 Az S3 vagy MinIO adminfelületén hozz létre egy új bucketet a Vendure assetok számára (pl. `vendure-assets`).
 
-### 4. Jogosultságok beállítása
+### 6. Jogosultságok beállítása
 
 Állítsd be a bucket jogosultságait, hogy a fájlok nyilvánosan elérhetőek legyenek. MinIO esetén ez általában alapértelmezett, de AWS S3 esetén külön be kell állítani.
 

@@ -102,6 +102,7 @@ export const config: VendureConfig = {
                         assetUrlPrefix: process.env.ASSET_URL_PREFIX,
                     });
                 },
+                // Az assetUrlPrefix beállítása környezeti változóból - ez fogja meghatározni, hogy a frontend honnan tölti le a képeket
                 assetUrlPrefix: process.env.ASSET_URL_PREFIX,
             } : {}),
         }),
