@@ -164,6 +164,9 @@ Ha új asset kerül feltöltésre, azt szinkronizálni kell a VPS-re, hogy elér
   ```
 - Mostantól a szerver automatikusan elindul újraindítás után is, és a háttérben fut.
 
+teszt 
+curl -X POST -F "file=@/home/csaba/git/vendure-default/static/assets/source/ca/legion2.jpg" -F "originalPath=source/ca/legion2.jpg" http://91.99.75.89:3000/upload -v
+
 ### 6. Hibák és megoldások
 - Node.js verzióütközés: régi csomagok eltávolítása, új Node.js telepítése
 - Jogosultságok: assetuser-nek írási jog kell a /var/www/assets mappához
