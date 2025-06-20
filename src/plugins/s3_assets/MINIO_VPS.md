@@ -160,7 +160,7 @@ server {
 # MinIO Admin Console (opcionális)
 server {
     listen 80;
-    server_name admin.need-shit.fun;  # Változtasd meg a domain nevet, ha szükséges
+    server_name minioadmin.need-shit.fun;  # MinIO admin felület domain neve
 
     location / {
         proxy_pass http://127.0.0.1:9001;
@@ -221,12 +221,15 @@ mc anonymous set public local/vendure-assets
 Mielőtt SSL tanústványt igényelnél, győződj meg róla, hogy a DNS rekordok megfelelően propagálódtak:
 
 ```bash
-# DNS propagáció ellenőrzése
+# DNS propagáció ellenőrzése mindegyik domain-re
 nslookup minio.need-shit.fun
 dig minio.need-shit.fun
 
+nslookup minioadmin.need-shit.fun
+dig minioadmin.need-shit.fun
+
 # Alternatív ellenőrzés online eszközzel
-# Látogass el: https://dnschecker.org/
+# Látogass el: https://dnschecker.org/ és ellenőrizd mindegyik domain-t
 ```
 
 A DNS propagáció akár 24-48 órát is igénybe vehet, bár általában gyorsabb.
@@ -237,20 +240,26 @@ A DNS propagáció akár 24-48 órát is igénybe vehet, bár általában gyorsa
 # Certbot telepítése
 sudo apt install certbot python3-certbot-nginx -y
 
-# SSL tanústvány kérése csak a fő domain-re
-sudo certbot --nginx -d minio.need-shit.fun
+# SSL tanústvány kérése a fő és admin domain-re
+sudo certbot --nginx -d minio.need-shit.fun -d minioadmin.need-shit.fun
 
-# Megjegyzés: Ha több domaint szeretnél hozzáadni, győződj meg róla, hogy érvényes domain neveket használsz
-# Például a kötőjel (-) problémát okozhat néhány esetben
+# Megjegyzés: Ha probléma lépne fel, próbáld meg külön-külön igényelni a tanústványokat
+# sudo certbot --nginx -d minio.need-shit.fun
+# sudo certbot --nginx -d minioadmin.need-shit.fun
 ```
 
 ### Alternatív megoldás
 
-Ha problémák lépnek fel a domain névvel, próbálj meg egy egyszerűbb nevet használni, például:
+Ha problémák lépnek fel a domain névvel, próbáld meg ezeket a lépéseket:
 
 ```bash
-# Példa egyszerűbb domain nevekre
-sudo certbot --nginx -d minio.need-shit.fun -d admin.need-shit.fun
+# 1. Ellenőrizd a DNS propagációt mindegyik domain-re
+nslookup minio.need-shit.fun
+nslookup minioadmin.need-shit.fun
+
+# 2. Próbáld meg külön-külön igényelni a tanústványokat
+sudo certbot --nginx -d minio.need-shit.fun
+sudo certbot --nginx -d minioadmin.need-shit.fun
 ```
 
 ## 10. Monitoring és Karbantartás
