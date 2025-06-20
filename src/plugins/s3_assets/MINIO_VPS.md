@@ -362,11 +362,16 @@ mc anonymous policy set-json cors.json local/vendure-assets
 2. Ellenőrizd, hogy a tűzfal engedélyezi a 9000-es és 9001-es portokat:
    ```bash
    sudo ufw status
+   sudo ss -tlnp | grep -E '9000|9001'
    ```
 
 3. Ellenőrizd az Nginx konfigurációt:
    ```bash
    sudo nginx -t
+   ```
+4. MinIO nem fut? 
+   ```bash
+   sudo journalctl -u minio -n 50
    ```
 
 ## 13. Biztonsági Megfontolások
