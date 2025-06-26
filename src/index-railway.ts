@@ -1,26 +1,33 @@
-import { bootstrap, runMigrations } from '@vendure/core';
-import { config } from './vendure-config';
+import { bootstrap, runMigrations, DefaultLogger, LogLevel } from '@vendure/core';
+import { config as baseConfig } from './vendure-config';
 
 console.log('Railway konfiguráció betöltése...');
 
 // A Railway automatikusan biztosít egy PORT környezeti változót
-// De ezt már kezeli a vendure-config.ts
+const railwayPort = process.env.PORT || 3000;
+console.log(`Railway PORT: ${railwayPort}`);
 
-// A Railway-en a környezeti változók már be vannak állítva:
-// DB_HOST=postgres
-// DB_PORT=5432
-// DB_NAME=railway
-// DB_USERNAME=postgres
-// DB_PASSWORD=postgres
-// DB_SCHEMA=public
+// Railway specifikus konfiguráció
+const railwayConfig = {
+    ...baseConfig,
+    apiOptions: {
+        ...baseConfig.apiOptions,
+        port: Number(railwayPort),
+    },
+    logger: new DefaultLogger({ level: LogLevel.Debug }), // Debug szintű naplózás a problémák azonosításához
+};
 
-// Ezeket a vendure-config.ts már megfelelően kezeli
-
+// Explicit módon kiírjuk a konfigurációt
+console.log(`Server port: ${railwayConfig.apiOptions.port}`);
+console.log(`Admin UI port: ${railwayConfig.apiOptions.port}`);
 console.log('Railway konfiguráció betöltése kész.');
 
 // Indítjuk a migrációkat, majd a szervert
-runMigrations(config)
-    .then(() => bootstrap(config))
+runMigrations(railwayConfig)
+    .then(() => {
+        console.log('Migrációk sikeresen lefutottak, szerver indítása...');
+        return bootstrap(railwayConfig);
+    })
     .catch(err => {
         console.error('Hiba történt a szerver indításakor:', err);
     });
