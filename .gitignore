@@ -16,7 +16,7 @@ build/
 # Environment variables
 #nv
 #env.*
-!env.RAIL.example
+#!env.RAIL.example
 
 # IDE and editor files
 .vscode/*

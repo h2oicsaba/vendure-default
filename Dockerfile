@@ -7,3 +7,6 @@ COPY package-lock.json ./
 RUN npm install --production
 COPY . .
 RUN npm run build
+
+# Alkalmazás indítása Railway környezetben
+CMD ["npm", "run", "railway"]

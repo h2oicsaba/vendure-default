@@ -1,6 +1,6 @@
 --
 -- PostgreSQL database dump
---
+-- user is postgres
 
 -- Dumped from database version 16.9 (Debian 16.9-1.pgdg120+1)
 -- Dumped by pg_dump version 16.9 (Ubuntu 16.9-1.pgdg22.04+1)
