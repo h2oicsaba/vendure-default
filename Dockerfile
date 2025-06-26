@@ -15,5 +15,5 @@ RUN npm install --production
 COPY . .
 RUN npm run build
 
-# Alkalmazás indítása
-CMD ["npm", "run", "start:server"]
+# Alkalmazás indítása - közvetlenül a node parancsot használjuk
+CMD ["node", "./dist/index.js"]
