@@ -152,7 +152,7 @@ export const config: VendureConfig = {
         }),
         AdminUiPlugin.init({
             route: 'admin',
-            port: 3002,
+            port: serverPort, // Use the same port as the main server
             adminUiConfig: {
                 apiPort: serverPort, // Az Admin UI hívja a Vendure API-t ezen a porton
             },
