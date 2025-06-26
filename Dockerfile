@@ -16,4 +16,4 @@ COPY . .
 RUN npm run build
 
 # Alkalmazás indítása Railway környezetben
-CMD ["node", "./dist/index-railway.js"]
+CMD ["npm", "run", "railway"]

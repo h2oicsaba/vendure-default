@@ -12,7 +12,7 @@
     "start": "concurrently npm:start:*",
     "railway:server": "node ./dist/index-railway.js",
     "railway:worker": "node ./dist/index-worker.js",
-    "railway": "concurrently npm:railway:*"
+    "railway": "node ./dist/index-railway.js"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.832.0",
