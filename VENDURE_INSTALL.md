@@ -66,11 +66,11 @@ newgrp docker
 cp .env.VPS.example .env
 # szerkeszd az adatbázis‑, redis‑, elastic, S3/minio és admin adatokat
 ```
-> **Mi az `.env.example` és hogyan használd?**  
-> • A `*.example` fájlt **commitoljuk** a Git‑be: tartalmazza **az összes szükséges változó nevét**, de _nem_ tartalmaz érzékeny adatot (pl. valódi jelszót).  
-> • Telepítéskor minden környezetben (DEV, UAT, PRD) **készíts másolatot** róla – `.env` – és _ott_ töltsd ki a privát értékeket.  
-> • A `.env`‑t **általában nem** commitolják (és szerepel a `.gitignore`‑ban), **kivéve**, ha csak fejlesztői / nem érzékeny értékeket tartalmaz – ekkor biztonsággal verziókövetheted.  
-> • UAT‑on a `.env` az UAT‑specifikus host‑, bucket‑, DB‑nevek, jelszavak helye.  
+> **Mi az `env.RAIL.example` és hogyan használd?**
+> • A `*.example` fájlt **commitoljuk** a Git‑be: tartalmazza **az összes szükséges változó nevét**, de _nem_ tartalmaz érzékeny adatot (pl. valódi jelszót).
+> • Telepítéskor minden környezetben (DEV, UAT, PRD) **készíts másolatot** róla – `.env` – és _ott_ töltsd ki a privát értékeket.
+> • A `.env`‑t **általában nem** commitolják (és szerepel a `.gitignore`‑ban), **kivéve**, ha csak fejlesztői / nem érzékeny értékeket tartalmaz – ekkor biztonsággal verziókövetheted.
+> • UAT‑on a `.env` az UAT‑specifikus host‑, bucket‑, DB‑nevek, jelszavak helye.
 
 ### A.3  Indítás
 ```bash
@@ -115,7 +115,7 @@ sudo systemctl enable --now elasticsearch
 
 ### B.5  Projekt build & futtatás
 ```bash
-cp .env.example .env   # töltsd ki
+cp env.RAIL.example .env   # töltsd ki
 npm ci                 # vagy: yarn install
 npm run build
 npm run start:server &
