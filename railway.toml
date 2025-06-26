@@ -2,6 +2,7 @@
 builder = "nixpacks"
 buildCommand = "npm run build"
 
+# Frissítve: 2025-06-26
 [deploy]
 startCommand = "npm run start:server"
 healthcheckPath = "/health"
