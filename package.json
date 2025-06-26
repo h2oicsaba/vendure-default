@@ -9,10 +9,7 @@
     "build": "tsc",
     "start:server": "node ./dist/index.js",
     "start:worker": "node ./dist/index-worker.js",
-    "start": "concurrently npm:start:*",
-    "railway:server": "node ./dist/index-railway.js",
-    "railway:worker": "node ./dist/index-worker.js",
-    "railway": "node ./dist/index-railway.js"
+    "start": "concurrently npm:start:*"
   },
   "dependencies": {
     "@aws-sdk/client-s3": "^3.832.0",
