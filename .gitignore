@@ -67,9 +67,9 @@ jspm_packages/
 .yarn-integrity
 
 # dotenv environment variable files
-.env.test
-.env.production
-.env.development
+#.env.test
+#.env.production
+#.env.development
 
 # Local Netlify folder
 .netlify
