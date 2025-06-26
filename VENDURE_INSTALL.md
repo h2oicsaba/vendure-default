@@ -63,7 +63,7 @@ newgrp docker
 ### A.2  Környezeti változók
 ```bash
 # VPS‑hez készített minta
-cp .env.example.VPS .env
+cp .env.VPS.example .env
 # szerkeszd az adatbázis‑, redis‑, elastic, S3/minio és admin adatokat
 ```
 > **Mi az `.env.example` és hogyan használd?**  
