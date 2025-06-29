@@ -11,10 +11,11 @@ WORKDIR /usr/src/app
 # Install dependencies first for better layer caching
 COPY package.json package-lock.json ./
 RUN npm ci
+RUN npm install -g typescript
 
 # Copy source and build
 COPY . .
-RUN npm ci && npm run build
+RUN npm run build
 
 # Production stage
 FROM node:20-alpine
