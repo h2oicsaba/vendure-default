@@ -1,6 +1,6 @@
 [build]
 builder = "nixpacks"
-buildCommand = "rm -rf dist && npm run build"
+buildCommand = "rm -rf dist && ./node_modules/.bin/tsc"
 installCommand = "npm ci"
 nixpacks = { version = "node20" }
 nodeVersion = "20"
