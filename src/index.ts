@@ -3,6 +3,11 @@ import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { config as baseConfig } from './vendure-config';
 import * as fs from 'fs';
 import * as path from 'path';
+import { HealthModule } from './health/health.module';
+
+// Express rate-limit beállítások
+process.env.TRUST_PROXY = 'true';
+process.env.EXPRESS_DISABLE_RATE_LIMIT = 'true';
 
 // Naplózás a környezet felismeréséről
 console.log('Alkalmazás indítása...');
@@ -29,21 +34,23 @@ let config = {
             origin: true,
             credentials: true,
         },
-        // Healthcheck útvonal hozzáadása
+        // Trust proxy beállítás
         middleware: [{
             handler: (req: any, res: any, next: any) => {
-                if (req.path === '/health') {
-                    console.log('Healthcheck kérés érkezett');
-                    return res.send('OK');
+                // Set trust proxy for express-rate-limit
+                if (req.app && typeof req.app.set === 'function') {
+                    req.app.set('trust proxy', 2);
                 }
                 console.log(`Kérés érkezett: ${req.method} ${req.path}`);
                 next();
             },
-            route: '*',
+            route: '',
         }],
     },
     // Trace szintű naplózás a problémák azonosításához
     logger: new DefaultLogger({ level: LogLevel.Verbose }),
+    // Health module regisztrálása
+    nestModules: [HealthModule],
 };
 
 // Railway specifikus adatbázis beállítások
@@ -56,12 +63,14 @@ if (isRailway) {
         config = {
             ...config,
             dbConnectionOptions: {
-                type: 'postgres',
+                type: 'postgres' as const,
                 url: process.env.DATABASE_URL,
                 synchronize: false,
                 logging: true,
-                ssl: {
-                    rejectUnauthorized: false
+                extra: {
+                    ssl: {
+                        rejectUnauthorized: false
+                    }
                 }
             }
         };
@@ -72,7 +81,7 @@ if (isRailway) {
         config = {
             ...config,
             dbConnectionOptions: {
-                type: 'postgres',
+                type: 'postgres' as const,
                 host: process.env.DB_HOST,
                 port: Number(process.env.DB_PORT) || 5432,
                 username: process.env.DB_USERNAME,
@@ -81,8 +90,10 @@ if (isRailway) {
                 schema: process.env.DB_SCHEMA || 'public',
                 synchronize: false,
                 logging: true,
-                ssl: {
-                    rejectUnauthorized: false
+                extra: {
+                    ssl: {
+                        rejectUnauthorized: false
+                    }
                 }
             }
         };
@@ -129,9 +140,6 @@ runMigrations(config)
         console.log('Szerver sikeresen elindult!');
         console.log(`Szerver elérhető: http://localhost:${config.apiOptions.port}`);
         console.log(`Admin UI elérhető: http://localhost:${config.apiOptions.port}/admin`);
-        
-        // Explicit healthcheck útvonal már regisztrálva van a middleware-ben
-        
         return app;
     })
     .catch(err => {

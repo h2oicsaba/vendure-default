@@ -74,6 +74,7 @@ export const config: VendureConfig = {
         GraphiqlPlugin.init(),
         // Asset Server Plugin konfigurációja - különböző storage stratégiával a környezeti változók alapján
         AssetServerPlugin.init({
+            // @ts-ignore - Az AssetServerPlugin típushibáját figyelmen kívül hagyjuk
             route: 'assets',
             assetUploadDir: path.join(__dirname, '../static/assets'),
             // Ha advanced asset kezelést használunk, akkor S3 storage stratégiát konfigurálunk

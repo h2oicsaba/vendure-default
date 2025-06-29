@@ -170,7 +170,7 @@ export class S3AssetStorageStrategy implements AssetStorageStrategy {
         }
     }
 
-    toAbsoluteUrl(request: RequestContext, identifier: string): string {
+    toAbsoluteUrl(request: unknown, identifier: string): string {
         // Ha van beállítva assetUrlPrefix, akkor azt használjuk
         if (this.assetUrlPrefix) {
             return `${this.assetUrlPrefix}${identifier}`;

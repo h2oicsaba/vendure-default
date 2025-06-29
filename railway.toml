@@ -1,10 +1,31 @@
 [build]
 builder = "nixpacks"
-buildCommand = "npm run build"
+buildCommand = "rm -rf dist && npm run build"
+installCommand = "npm ci"
+nixpacks = { version = "node20" }
+nodeVersion = "20"
 
-# Frissítve: 2025-06-26
 [deploy]
-startCommand = "npm run start:server"
+startCommand = "node dist/index.js"
 healthcheckPath = "/health"
-healthcheckTimeout = 100
-restartPolicyType = "on_failure"
+healthcheckTimeout = 10
+restartDelay = 5
+healthcheckInterval = 15
+healthcheckStartPeriod = 30
+healthcheckSuccessThreshold = 1
+healthcheckFailureThreshold = 3
+
+[build.environment]
+NODE_ENV = "production"
+NODE_OPTIONS = "--max_old_space_size=1024"
+PORT = "3000"
+
+[deploy.regions]
+primary = "europe-west1"
+fallback = "us-east1"
+
+[deploy.environment]
+NODE_ENV = "production"
+PORT = "3000"
+TRUST_PROXY = "true"
+EXPRESS_DISABLE_RATE_LIMIT = "true"
