@@ -14,7 +14,7 @@ RUN npm ci
 
 # Copy source and build
 COPY . .
-RUN npm run build
+RUN npm ci && npm run build
 
 # Production stage
 FROM node:20-alpine
