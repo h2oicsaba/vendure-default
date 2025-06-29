@@ -38,6 +38,12 @@ RUN npm ci --production
 # Copy built files from builder
 COPY --from=builder /usr/src/app/dist ./dist
 
+# Create static directories for email templates and add basic template files
+RUN mkdir -p ./static/email/templates ./static/email/test-emails
+
+# Create a basic template file to ensure the directory exists
+RUN echo "<!DOCTYPE html><html><body><h1>Default Email Template</h1><p>{{ body }}</p></body></html>" > ./static/email/templates/default.hbs
+
 # Set environment variables
 ENV PORT=3000
 

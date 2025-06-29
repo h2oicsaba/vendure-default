@@ -29,3 +29,18 @@ NODE_ENV = "production"
 PORT = "3000"
 TRUST_PROXY = "true"
 EXPRESS_DISABLE_RATE_LIMIT = "true"
+# Email beállítások
+USE_EMAIL = "default"  # 'default' vagy 'advanced'
+
+# Email URL-ek - ezeket a valódi frontend URL-ekre kell cserélni
+VERIFY_EMAIL_URL = "https://your-frontend-domain.com/verify"
+PASSWORD_RESET_URL = "https://your-frontend-domain.com/password-reset"
+CHANGE_EMAIL_URL = "https://your-frontend-domain.com/verify-email-address-change"
+
+# SMTP beállítások - csak akkor szükségesek, ha USE_EMAIL='advanced'
+# EMAIL_SMTP_HOST = "smtp.example.com"
+# EMAIL_SMTP_PORT = "587"
+# EMAIL_SMTP_USER = "user@example.com"
+# EMAIL_SMTP_PASS = "password"
+# EMAIL_SMTP_SECURE = "false"
+# EMAIL_FROM_ADDRESS = "\"Your Store\" <noreply@example.com>"

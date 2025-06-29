@@ -138,17 +138,31 @@ export const config: VendureConfig = {
         // Itt volt korábban a VPS asset pluginek konfigurációja, de eltávolítottuk
 
         EmailPlugin.init({
-            devMode: IS_DEV as true, // TypeScript cast, hogy elfogadja a boolean értéket
+            devMode: process.env.USE_EMAIL !== 'advanced' ? true : false as true, // Ha nem advanced, akkor devMode
             outputPath: path.join(__dirname, '../static/email/test-emails'),
             route: 'mailbox',
             handlers: defaultEmailHandlers,
             templateLoader: new FileBasedTemplateLoader(path.join(__dirname, '../static/email/templates')),
+            transport: process.env.USE_EMAIL === 'advanced' 
+                ? {
+                    type: 'smtp', // Ha advanced, akkor SMTP
+                    host: process.env.EMAIL_SMTP_HOST,
+                    port: Number(process.env.EMAIL_SMTP_PORT) || 587,
+                    auth: {
+                        user: process.env.EMAIL_SMTP_USER,
+                        pass: process.env.EMAIL_SMTP_PASS,
+                    },
+                    secure: process.env.EMAIL_SMTP_SECURE === 'true',
+                  }
+                : {
+                    type: 'none', // Egyébként nem küld emailt, csak naplózza
+                  },
             globalTemplateVars: {
-                fromAddress: '"example" <noreply@example.com>',
-                // Ezeket az URL-eket a frontend alkalmazásod URL-jére cseréld
-                verifyEmailAddressUrl: 'http://localhost:8080/verify', 
-                passwordResetUrl: 'http://localhost:8080/password-reset',
-                changeEmailAddressUrl: 'http://localhost:8080/verify-email-address-change'
+                fromAddress: process.env.EMAIL_FROM_ADDRESS || (() => { throw new Error('EMAIL_FROM_ADDRESS környezeti változó nincs beállítva!'); })(),
+                // Email URL-ek - hibát dobnak, ha nincsenek beállítva
+                verifyEmailAddressUrl: process.env.VERIFY_EMAIL_URL || (() => { throw new Error('VERIFY_EMAIL_URL környezeti változó nincs beállítva!'); })(), 
+                passwordResetUrl: process.env.PASSWORD_RESET_URL || (() => { throw new Error('PASSWORD_RESET_URL környezeti változó nincs beállítva!'); })(),
+                changeEmailAddressUrl: process.env.CHANGE_EMAIL_URL || (() => { throw new Error('CHANGE_EMAIL_URL környezeti változó nincs beállítva!'); })()
             },
         }),
         AdminUiPlugin.init({
