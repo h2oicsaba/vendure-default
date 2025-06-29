@@ -43,4 +43,4 @@ CHANGE_EMAIL_URL = "https://your-frontend-domain.com/verify-email-address-change
 # EMAIL_SMTP_USER = "user@example.com"
 # EMAIL_SMTP_PASS = "password"
 # EMAIL_SMTP_SECURE = "false"
-# EMAIL_FROM_ADDRESS = "\"Your Store\" <noreply@example.com>"
+EMAIL_FROM_ADDRESS = "Vendure Store <noreply@need-shit.fun>"

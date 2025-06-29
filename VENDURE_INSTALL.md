@@ -142,9 +142,23 @@ npm run start:worker &
 
 ---
 
-## E) Hibakeresés
+## E) Email template kezelés
+
+A rendszer az email templateket a Docker image részeként kezeli, nem külső volume-ként:
+
+- Az email sablonok a `static/email/templates` könyvtárban találhatók a Docker image-ben
+- Az email teszt kimenetek a `static/email/test-emails` könyvtárba kerülnek
+- Ha módosítani szeretnénk az email sablonokat, akkor a forráskódban kell változtatni és újra kell deployolni az alkalmazást
+- Az email küldés módját a `USE_EMAIL` környezeti változó határozza meg:
+  - `default`: Az EmailPlugin devMode-ban fut, nem küld valódi emaileket, csak naplózza őket
+  - `advanced`: Az EmailPlugin SMTP transport-ot használ, a konfigurációt az `EMAIL_SMTP_*` környezeti változók határozzák meg
+
+Ez a megközelítés biztosítja, hogy az email sablonok mindig elérhetőek legyenek, és nem kell külön volume-ot vagy tárolót konfigurálni hozzájuk.
+
+## F) Hibakeresés
 - **Vendure nem indul:** nézd meg, hogy *postgres/redis/elasticsearch* konténerek `healthy`‑k-e.
 - **Képek hiányoznak:** ellenőrizd az S3/MinIO kapcsolatot, `ASSET_URL_PREFIX` és `S3_ENDPOINT`‑et.
+- **Email problémák:** ellenőrizd a `USE_EMAIL` beállítást és az email környezeti változókat. Ha `advanced` módban vagy, ellenőrizd az SMTP beállításokat.
 
 ---
 
