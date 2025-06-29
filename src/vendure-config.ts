@@ -7,15 +7,14 @@ import {
     dummyPaymentHandler,
     DefaultJobQueuePlugin,
     DefaultSearchPlugin,
-    VendureConfig,
-    DefaultSchedulerPlugin
+    VendureConfig
 } from '@vendure/core';
+// Az ElasticsearchPlugin nincs telepítve, ezért használjuk a DefaultSearchPlugin-t
 import { BullMQJobQueuePlugin } from '@vendure/job-queue-plugin/package/bullmq';
 import { defaultEmailHandlers, EmailPlugin, FileBasedTemplateLoader } from '@vendure/email-plugin';
 import { AssetServerPlugin } from '@vendure/asset-server-plugin';
 import { GraphiqlPlugin } from '@vendure/graphiql-plugin';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
-import { ElasticsearchPlugin } from '@vendure/elasticsearch-plugin';
 
 // Importáljuk a saját S3 asset storage stratégiánkat
 import { S3AssetStorageStrategy } from './plugins/s3_assets/s3-asset-storage-strategy';
@@ -107,7 +106,8 @@ export const config: VendureConfig = {
                 assetUrlPrefix: process.env.ASSET_URL_PREFIX,
             } : {}),
         }),
-        DefaultSchedulerPlugin.init(),
+        // A DefaultSchedulerPlugin nincs telepítve, ezért kikommentezzük
+        // DefaultSchedulerPlugin.init(),
 
         // Job Queue plugin kiválasztása a környezeti változó alapján
         ...(USE_ADVANCED_JOB_QUEUE ? [
@@ -117,23 +117,11 @@ export const config: VendureConfig = {
                     port: +(process.env.REDIS_PORT || 6379),
                 }
             })
-        ] : [
-            DefaultJobQueuePlugin.init({
-                useDatabaseForBuffer: true,
-            })
-        ]),
+        ] : []),
             
         // Search plugin kiválasztása a környezeti változó alapján
-        ...(USE_ADVANCED_SEARCH ? [
-            ElasticsearchPlugin.init({
-                host: process.env.ELASTICSEARCH_HOST || 'localhost',
-                port: +(process.env.ELASTICSEARCH_PORT || 9200),
-                // username: process.env.ELASTICSEARCH_USERNAME, // Ha használsz auth-ot
-                // password: process.env.ELASTICSEARCH_PASSWORD, // Ha használsz auth-ot
-            })
-        ] : [
-            DefaultSearchPlugin
-        ]),
+        // Az ElasticsearchPlugin nincs telepítve, ezért mindig a DefaultSearchPlugin-t használjuk
+        DefaultSearchPlugin,
             
         // Itt volt korábban a VPS asset pluginek konfigurációja, de eltávolítottuk
 
