@@ -12,7 +12,7 @@ WORKDIR /usr/src/app
 COPY package.json package-lock.json ./
 RUN npm ci
 RUN npm install -g typescript
-RUN npm install @vendure/common@3.3.3
+RUN npm install @vendure/common@3.3.3 @vendure/common
 
 # Copy source and build
 COPY . .

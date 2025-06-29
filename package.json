@@ -22,13 +22,13 @@
     "@vendure/email-plugin": "3.3.3",
     "@vendure/graphiql-plugin": "3.3.3",
     "@vendure/job-queue-plugin": "3.3.3",
-    "@nestjs/terminus": "^10.0.0",
-    "@nestjs/typeorm": "^10.0.0",
+    "@nestjs/terminus": "^10.3.0",
+    "@nestjs/typeorm": "^10.0.2",
     "axios": "^1.10.0",
     "bullmq": "^5.53.3",
-    "dotenv": "^16.0.0",
+    "dotenv": "^16.5.0",
     "form-data": "^4.0.3",
-    "pg": "^8.7.1"
+    "pg": "8.16.0"
   },
   "devDependencies": {
     "@types/form-data": "^2.2.1",
