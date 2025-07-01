@@ -38,27 +38,42 @@ let config = {
             credentials: true,
         },
         // Trust proxy beállítás - több helyen is beállítjuk a biztonság kedvéért
-        middleware: [{
-            handler: (req: any, res: any, next: any) => {
-                // Set trust proxy for express-rate-limit
-                if (req.app && typeof req.app.set === 'function') {
-                    // Railway és más cloud környezetekben a proxy beállítás szükséges
-                    req.app.set('trust proxy', 1);
-                    
-                    // Express Rate Limit problémák elkerülése
-                    if (req.app.disable) {
-                        req.app.disable('rate limit');
+        middleware: [
+            // HTTPS átirányítás middleware
+            {
+                handler: (req: any, res: any, next: any) => {
+                    // HTTPS átirányítás Railway környezetben
+                    if (isRailway && req.headers['x-forwarded-proto'] === 'http') {
+                        console.log('HTTP kérés átirányítása HTTPS-re');
+                        return res.redirect(`https://${req.headers.host}${req.url}`);
                     }
-                }
-                // Proxy fejlécek ellenőrzése és naplózása
-                if (req.headers && req.headers['x-forwarded-for']) {
-                    console.log(`X-Forwarded-For: ${req.headers['x-forwarded-for']}`);
-                }
-                console.log(`Kérés érkezett: ${req.method} ${req.path}`);
-                next();
+                    next();
+                },
+                route: '',
             },
-            route: '',
-        }],
+            // Eredeti middleware
+            {
+                handler: (req: any, res: any, next: any) => {
+                    // Set trust proxy for express-rate-limit
+                    if (req.app && typeof req.app.set === 'function') {
+                        // Railway és más cloud környezetekben a proxy beállítás szükséges
+                        req.app.set('trust proxy', 1);
+                        
+                        // Express Rate Limit problémák elkerülése
+                        if (req.app.disable) {
+                            req.app.disable('rate limit');
+                        }
+                    }
+                    // Proxy fejlécek ellenőrzése és naplózása
+                    if (req.headers && req.headers['x-forwarded-for']) {
+                        console.log(`X-Forwarded-For: ${req.headers['x-forwarded-for']}`);
+                    }
+                    console.log(`Kérés érkezett: ${req.method} ${req.path}`);
+                    next();
+                },
+                route: '',
+            }
+        ],
         // Express Rate Limit beállítások már konfigurálva fentebb
     },
     // Trace szintű naplózás a problémák azonosításához
