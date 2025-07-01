@@ -9,18 +9,32 @@ import { HealthModule } from './health/health.module';
 process.env.TRUST_PROXY = '1'; // Számot használunk string formátumban
 process.env.EXPRESS_DISABLE_RATE_LIMIT = 'true';
 
-// Express app beállítások globálisan
-const express = require('express');
-express.application.set('trust proxy', 1);
-
-// Explicit express-rate-limit konfigurálás
+// Express beállítások - biztonságosabb megközelítés
 try {
+    // Csak importáljuk az express-t, de nem próbáljuk globálisan beállítani
+    // A Vendure fogja létrehozni az Express alkalmazást
+    const expressModule = require('express');
+    console.log('Express modul betöltve');
+    
+    // Express Rate Limit explicit konfigurálás
     const rateLimit = require('express-rate-limit');
-    if (rateLimit && rateLimit.default) {
-        rateLimit.default.defaultOptions.trustProxy = true;
+    if (rateLimit && typeof rateLimit.default === 'function') {
+        // Modern express-rate-limit verzió
+        console.log('express-rate-limit konfigurálása (modern verzió)');
+        rateLimit.default.defaultOptions = { 
+            ...rateLimit.default.defaultOptions,
+            trustProxy: 1 // Számot használunk true helyett, következetesen
+        };
+    } else if (rateLimit) {
+        // Régebbi express-rate-limit verzió
+        console.log('express-rate-limit konfigurálása (régebbi verzió)');
+        rateLimit.defaults = { 
+            ...rateLimit.defaults,
+            trustProxy: 1 // Számot használunk true helyett, következetesen
+        };
     }
-} catch (e) {
-    console.log('express-rate-limit nem található vagy nem konfigurálható');
+} catch (e: any) {
+    console.log('Express vagy express-rate-limit modul nem található vagy nem konfigurálható:', e?.message || 'Ismeretlen hiba');
 }
 
 // Naplózás a környezet felismeréséről
