@@ -40,11 +40,20 @@ RUN npm ci --production
 # Copy built files from builder
 COPY --from=builder /usr/src/app/dist ./dist
 
-# Create static directories for email templates and add basic template files
-RUN mkdir -p ./static/email/templates ./static/email/test-emails
+# Copy email templates from the builder stage
+COPY --from=builder /usr/src/app/static/email ./static/email
 
-# Create a basic template file to ensure the directory exists
-RUN echo "<!DOCTYPE html><html><body><h1>Default Email Template</h1><p>{{ body }}</p></body></html>" > ./static/email/templates/default.hbs
+# Ensure all required email template directories exist
+RUN mkdir -p ./static/email/templates/partials ./static/email/templates/email-verification ./static/email/templates/password-reset ./static/email/templates/email-address-change ./static/email/templates/order-confirmation ./static/email/test-emails
+
+# Create basic template files if they don't exist
+RUN [ -f ./static/email/templates/partials/header.hbs ] || echo "<header>Email Header</header>" > ./static/email/templates/partials/header.hbs
+RUN [ -f ./static/email/templates/partials/footer.hbs ] || echo "<footer>Email Footer</footer>" > ./static/email/templates/partials/footer.hbs
+
+# Create basic templates for each email type if they don't exist
+RUN for dir in email-verification password-reset email-address-change order-confirmation; do \
+    [ -f ./static/email/templates/$dir/body.hbs ] || echo "<!DOCTYPE html><html><body>{{> header }}\n<h1>${dir}</h1>\n<p>{{ body }}</p>\n{{> footer }}</body></html>" > ./static/email/templates/$dir/body.hbs; \
+  done
 
 # Set environment variables
 ENV PORT=3000
