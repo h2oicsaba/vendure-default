@@ -10,7 +10,18 @@ process.env.TRUST_PROXY = '1'; // Számot használunk string formátumban
 process.env.EXPRESS_DISABLE_RATE_LIMIT = 'true';
 
 // Express app beállítások globálisan
-require('express')().set('trust proxy', 1);
+const express = require('express');
+express.application.set('trust proxy', 1);
+
+// Explicit express-rate-limit konfigurálás
+try {
+    const rateLimit = require('express-rate-limit');
+    if (rateLimit && rateLimit.default) {
+        rateLimit.default.defaultOptions.trustProxy = true;
+    }
+} catch (e) {
+    console.log('express-rate-limit nem található vagy nem konfigurálható');
+}
 
 // Naplózás a környezet felismeréséről
 console.log('Alkalmazás indítása...');
