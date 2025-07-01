@@ -158,20 +158,20 @@ if (fs.existsSync(distPath)) {
     console.error('dist könyvtár NEM létezik!');
 }
 
-// Migrációk futtatása, majd a szerver indítása
-console.log('Migrációk futtatása...');
+// Indítási sorrend: migrációk futtatása, majd szerver indítása
+console.log('Migrációk futtatása kezdődik...');
 runMigrations(config)
     .then(() => {
         console.log('Migrációk sikeresen lefutottak, szerver indítása...');
         return bootstrap(config);
     })
     .then(app => {
-        console.log('Szerver sikeresen elindult!');
-        console.log(`Szerver elérhető: http://localhost:${config.apiOptions.port}`);
-        console.log(`Admin UI elérhető: http://localhost:${config.apiOptions.port}/admin`);
-        return app;
+        console.log(`Vendure szerver sikeresen elindult a ${config.apiOptions.port} porton!`);
+        console.log(`Admin API elérhető: ${config.apiOptions.adminApiPath}`);
+        console.log(`Shop API elérhető: ${config.apiOptions.shopApiPath}`);
     })
     .catch(err => {
+        console.error('HIBA a szerver indításakor:');
         console.error('Hiba történt a szerver indításakor:');
         console.error(err);
     });
