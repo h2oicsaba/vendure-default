@@ -39,6 +39,16 @@ let config = {
         },
         // Trust proxy beállítás - több helyen is beállítjuk a biztonság kedvéért
         middleware: [
+            // Health check endpoint a Railway és Docker számára
+            {
+                handler: (req: any, res: any, next: any) => {
+                    if (req.path === '/health') {
+                        return res.status(200).send({ status: 'ok', timestamp: new Date().toISOString() });
+                    }
+                    next();
+                },
+                route: '',
+            },
             // HTTPS átirányítás middleware
             {
                 handler: (req: any, res: any, next: any) => {
