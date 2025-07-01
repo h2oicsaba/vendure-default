@@ -94,7 +94,7 @@ if (isRailway) {
             dbConnectionOptions: {
                 type: 'postgres' as const,
                 url: process.env.DATABASE_URL,
-                synchronize: false,
+                synchronize: true, // IDEIGLENES: Az első indításkor true, utána vissza kell állítani false-ra!
                 logging: true,
                 extra: {
                     ssl: {
@@ -117,7 +117,7 @@ if (isRailway) {
                 password: process.env.DB_PASSWORD,
                 database: process.env.DB_NAME,
                 schema: process.env.DB_SCHEMA || 'public',
-                synchronize: false,
+                synchronize: true, // IDEIGLENES: Az első indításkor true, utána vissza kell állítani false-ra!
                 logging: true,
                 extra: {
                     ssl: {
