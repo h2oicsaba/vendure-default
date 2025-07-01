@@ -39,6 +39,27 @@ export const config: VendureConfig = {
             adminApiDebug: true,
             shopApiDebug: true,
         } : {}),
+        // Middleware hozzáadása a trust proxy beállításhoz
+        middleware: [
+            {
+                handler: (req, res, next) => {
+                    // Express app trust proxy beállítása
+                    if (req.app) {
+                        req.app.set('trust proxy', 1);
+                        console.log('Trust proxy beállítva: 1');
+                    }
+                    
+                    // HTTP -> HTTPS átirányítás Railway környezetben
+                    const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_ID;
+                    if (isRailway && req.headers['x-forwarded-proto'] === 'http') {
+                        return res.redirect(`https://${req.headers.host}${req.url}`);
+                    }
+                    
+                    next();
+                },
+                route: '',
+            }
+        ],
     },
     authOptions: {
         tokenMethod: ['bearer', 'cookie'],
