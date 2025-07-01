@@ -67,11 +67,30 @@ let config = {
                     // Set trust proxy for express-rate-limit
                     if (req.app && typeof req.app.set === 'function') {
                         // Railway és más cloud környezetekben a proxy beállítás szükséges
-                        req.app.set('trust proxy', 1);
+                        req.app.set('trust proxy', 2);
                         
-                        // Express Rate Limit problémák elkerülése
+                        // Express Rate Limit TELJES kikapcsolása
                         if (req.app.disable) {
                             req.app.disable('rate limit');
+                        }
+                        
+                        // Minden rate limiter middleware kikapcsolása
+                        if (req.app._router && req.app._router.stack) {
+                            const rateLimitMiddlewareIndices: number[] = [];
+                            
+                            // Keressük meg az összes rate limit middleware-t
+                            req.app._router.stack.forEach((middleware: any, i: number) => {
+                                if (middleware.handle && middleware.handle.name === 'rateLimit') {
+                                    rateLimitMiddlewareIndices.push(i);
+                                }
+                            });
+                            
+                            // Távolítsuk el őket fordított sorrendben (hogy ne változzon az index)
+                            for (let i = rateLimitMiddlewareIndices.length - 1; i >= 0; i--) {
+                                req.app._router.stack.splice(rateLimitMiddlewareIndices[i], 1);
+                            }
+                            
+                            console.log(`${rateLimitMiddlewareIndices.length} rate limit middleware eltávolítva`);
                         }
                     }
                     // Proxy fejlécek ellenőrzése és naplózása
