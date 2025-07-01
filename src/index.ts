@@ -39,13 +39,15 @@ let config = {
             handler: (req: any, res: any, next: any) => {
                 // Set trust proxy for express-rate-limit
                 if (req.app && typeof req.app.set === 'function') {
-                    req.app.set('trust proxy', 2);
+                    // Railway és más cloud környezetekben a proxy beállítás szükséges
+                    req.app.set('trust proxy', true);
                 }
                 console.log(`Kérés érkezett: ${req.method} ${req.path}`);
                 next();
             },
             route: '',
         }],
+        // Express Rate Limit beállítások már konfigurálva fentebb
     },
     // Trace szintű naplózás a problémák azonosításához
     logger: new DefaultLogger({ level: LogLevel.Verbose }),
