@@ -6,8 +6,11 @@ import * as path from 'path';
 import { HealthModule } from './health/health.module';
 
 // Express rate-limit beállítások
-process.env.TRUST_PROXY = 'true';
+process.env.TRUST_PROXY = '1'; // Számot használunk string formátumban
 process.env.EXPRESS_DISABLE_RATE_LIMIT = 'true';
+
+// Express app beállítások globálisan
+require('express')().set('trust proxy', 1);
 
 // Naplózás a környezet felismeréséről
 console.log('Alkalmazás indítása...');
@@ -34,13 +37,22 @@ let config = {
             origin: true,
             credentials: true,
         },
-        // Trust proxy beállítás
+        // Trust proxy beállítás - több helyen is beállítjuk a biztonság kedvéért
         middleware: [{
             handler: (req: any, res: any, next: any) => {
                 // Set trust proxy for express-rate-limit
                 if (req.app && typeof req.app.set === 'function') {
                     // Railway és más cloud környezetekben a proxy beállítás szükséges
-                    req.app.set('trust proxy', true);
+                    req.app.set('trust proxy', 1);
+                    
+                    // Express Rate Limit problémák elkerülése
+                    if (req.app.disable) {
+                        req.app.disable('rate limit');
+                    }
+                }
+                // Proxy fejlécek ellenőrzése és naplózása
+                if (req.headers && req.headers['x-forwarded-for']) {
+                    console.log(`X-Forwarded-For: ${req.headers['x-forwarded-for']}`);
                 }
                 console.log(`Kérés érkezett: ${req.method} ${req.path}`);
                 next();
