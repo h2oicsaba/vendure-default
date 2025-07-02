@@ -106,6 +106,7 @@ export const config: VendureConfig = {
                         },
                         endpoint: process.env.S3_ENDPOINT,
                         region: process.env.S3_REGION,
+                        // A string 'true' értéket boolean true-ra konvertáljuk
                         forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
                         assetUrlPrefix: process.env.ASSET_URL_PREFIX,
                     });
