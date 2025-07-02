@@ -2,6 +2,7 @@
 
 import 'dotenv/config'; // Fontos, hogy ez legyen az ELSŐ import, hogy a .env változók betöltődjenek
 import path from 'path';
+import { Application } from 'express';
 
 import {
     dummyPaymentHandler,
@@ -34,6 +35,10 @@ export const config: VendureConfig = {
         port: serverPort,
         adminApiPath: 'admin-api',
         shopApiPath: 'shop-api',
+        // A 'trust proxy' beállítás hozzáadása
+        app: (app: Application) => {
+            app.set('trust proxy', true);
+        },
         // Ezek a debug opciók IS_DEV alapján kapcsolódnak be/ki
         ...(IS_DEV ? {
             adminApiDebug: true,
