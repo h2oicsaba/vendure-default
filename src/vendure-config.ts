@@ -36,9 +36,17 @@ export const config: VendureConfig = {
         adminApiPath: 'admin-api',
         shopApiPath: 'shop-api',
         // A 'trust proxy' beállítás hozzáadása
-        configure: (app: Application) => {
-            app.set('trust proxy', 2);
-        },
+        middleware: [{
+            handler: (req: any, res: any, next: any) => {
+                // This is a workaround to set the "trust proxy" setting on the Express app.
+                // We do it in a middleware because Vendure does not expose a direct way to configure the Express app instance.
+                if (!req.app.get('trust proxy')) {
+                    req.app.set('trust proxy', 2);
+                }
+                next();
+            },
+            route: '*' 
+        }],
         // Ezek a debug opciók IS_DEV alapján kapcsolódnak be/ki
         ...(IS_DEV ? {
             adminApiDebug: true,
