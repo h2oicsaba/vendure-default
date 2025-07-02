@@ -30,23 +30,15 @@ const USE_ADVANCED_JOB_QUEUE = process.env.USE_JOB_QUEUE === 'advanced';
 const USE_ADVANCED_SEARCH = process.env.USE_SEARCH === 'advanced';
 const serverPort = +process.env.PORT! || 3000; // Használjuk a .env-ből érkező PORT-ot
 
+
+
 export const config: VendureConfig = {
     apiOptions: {
         port: serverPort,
         adminApiPath: 'admin-api',
         shopApiPath: 'shop-api',
         // A 'trust proxy' beállítás hozzáadása
-        middleware: [{
-            handler: (req: any, res: any, next: any) => {
-                // This is a workaround to set the "trust proxy" setting on the Express app.
-                // We do it in a middleware because Vendure does not expose a direct way to configure the Express app instance.
-                if (!req.app.get('trust proxy')) {
-                    req.app.set('trust proxy', 2);
-                }
-                next();
-            },
-            route: '*' 
-        }],
+
         // Ezek a debug opciók IS_DEV alapján kapcsolódnak be/ki
         ...(IS_DEV ? {
             adminApiDebug: true,
@@ -61,6 +53,9 @@ export const config: VendureConfig = {
         },
         cookieOptions: {
           secret: process.env.COOKIE_SECRET,
+          // Production-safe cookie beállítások
+          secure: !IS_DEV,
+          sameSite: 'strict',
         },
     },
     dbConnectionOptions: {
@@ -168,9 +163,14 @@ export const config: VendureConfig = {
         }),
         AdminUiPlugin.init({
             route: 'admin',
-            port: serverPort, // Use the same port as the main server
+            port: serverPort,
             adminUiConfig: {
-                apiPort: serverPort, // Az Admin UI hívja a Vendure API-t ezen a porton
+                apiHost: IS_DEV ? `http://localhost:${serverPort}` : (() => {
+                    if (!process.env.PUBLIC_HOST_URL) {
+                        throw new Error('A PUBLIC_HOST_URL környezeti változót be kell állítani éles környezetben!');
+                    }
+                    return process.env.PUBLIC_HOST_URL;
+                })(),
             },
         }),
     ],

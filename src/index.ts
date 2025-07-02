@@ -10,7 +10,7 @@ process.env.TRUST_PROXY = '1'; // Számot használunk string formátumban
 process.env.EXPRESS_DISABLE_RATE_LIMIT = 'true';
 
 // Express app beállítások globálisan
-require('express')().set('trust proxy', 1);
+
 
 // Naplózás a környezet felismeréséről
 console.log('Alkalmazás indítása...');
@@ -189,18 +189,17 @@ if (fs.existsSync(distPath)) {
 
 // Indítási sorrend: migrációk futtatása, majd szerver indítása
 console.log('Migrációk futtatása kezdődik...');
-runMigrations(config)
-    .then(() => {
+(async () => {
+    try {
+        console.log('Migrációk futtatása kezdődik...');
+        await runMigrations(config);
         console.log('Migrációk sikeresen lefutottak, szerver indítása...');
-        return bootstrap(config);
-    })
-    .then(app => {
+        const app = await bootstrap(config);
+        // Ez a helyes módja a 'trust proxy' beállításának a Vendure által használt Express appon
+        app.getHttpAdapter().getInstance().set('trust proxy', 1);
         console.log(`Vendure szerver sikeresen elindult a ${config.apiOptions.port} porton!`);
-        console.log(`Admin API elérhető: ${config.apiOptions.adminApiPath}`);
-        console.log(`Shop API elérhető: ${config.apiOptions.shopApiPath}`);
-    })
-    .catch(err => {
-        console.error('HIBA a szerver indításakor:');
-        console.error('Hiba történt a szerver indításakor:');
-        console.error(err);
-    });
+    } catch (err) {
+        console.error('HIBA a szerver indításakor:', err);
+        process.exit(1);
+    }
+})();
