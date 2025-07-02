@@ -36,8 +36,8 @@ export const config: VendureConfig = {
         adminApiPath: 'admin-api',
         shopApiPath: 'shop-api',
         // A 'trust proxy' beállítás hozzáadása
-        app: (app: Application) => {
-            app.set('trust proxy', 2 );
+        configure: (app: Application) => {
+            app.set('trust proxy', 2);
         },
         // Ezek a debug opciók IS_DEV alapján kapcsolódnak be/ki
         ...(IS_DEV ? {
