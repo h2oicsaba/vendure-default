@@ -29,18 +29,23 @@ NODE_ENV = "production"
 PORT = "3000"
 TRUST_PROXY = "true"
 EXPRESS_DISABLE_RATE_LIMIT = "true"
+
 # Email beállítások
-USE_EMAIL = "default"  # 'default' vagy 'advanced'
+USE_EMAIL = "advanced"  # 'advanced' mód bekapcsolva
 
-# Email URL-ek - ezeket a valódi frontend URL-ekre kell cserélni
-VERIFY_EMAIL_URL = "https://your-frontend-domain.com/verify"
-PASSWORD_RESET_URL = "https://your-frontend-domain.com/password-reset"
-CHANGE_EMAIL_URL = "https://your-frontend-domain.com/verify-email-address-change"
+# Email URL-ek
+VERIFY_EMAIL_URL = "https://need-shit.fun/verify"
+PASSWORD_RESET_URL = "https://need-shit.fun/password-reset"
+CHANGE_EMAIL_URL = "https://need-shit.fun/verify-email-address-change"
 
-# SMTP beállítások - csak akkor szükségesek, ha USE_EMAIL='advanced'
-# EMAIL_SMTP_HOST = "smtp.example.com"
-# EMAIL_SMTP_PORT = "587"
-# EMAIL_SMTP_USER = "user@example.com"
-# EMAIL_SMTP_PASS = "password"
-# EMAIL_SMTP_SECURE = "false"
-EMAIL_FROM_ADDRESS = "Vendure Store <noreply@need-shit.fun>"
+# SMTP beállítások a Docker SMTP szerverhez
+EMAIL_SMTP_HOST = "smtp"
+EMAIL_SMTP_PORT = "587"
+EMAIL_SMTP_USER = "noreply@need-shit.fun"
+EMAIL_SMTP_PASS = "erős_jelszó_ide"
+EMAIL_SMTP_SECURE = "false"
+EMAIL_FROM_ADDRESS = "\"Vendure Store\" <noreply@need-shit.fun>"
+
+# SMTP szerver beállítások
+SMTP_HOST_PORT = "25"
+SMTP_HOST_PORT_SUBMISSION = "587"

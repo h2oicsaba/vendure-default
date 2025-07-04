@@ -8,6 +8,7 @@ import {
     dummyPaymentHandler,
     DefaultJobQueuePlugin,
     DefaultSearchPlugin,
+    LanguageCode,
     VendureConfig
 } from '@vendure/core';
 // Az ElasticsearchPlugin nincs telepítve, ezért használjuk a DefaultSearchPlugin-t
@@ -172,6 +173,11 @@ export const config: VendureConfig = {
                     }
                     return process.env.PUBLIC_HOST_URL;
                 })(),
+                // Megjegyzés: A jelenlegi Vendure verzió nem támogatja az availableLocales beállítást
+                // Ha frissíted a Vendure verziót, akkor így állíthatnád be:
+                // app: {
+                //     availableLocales: ['hu-HU', 'sk-SK'],
+                // }
             },
         }),
     ],

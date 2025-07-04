@@ -1,6 +1,23 @@
 # docker-compose.yml
 
 services:
+  smtp:
+    image: bytemark/smtp
+    ports:
+      - "${SMTP_HOST_PORT:-25}:25"
+      - "${SMTP_HOST_PORT_SUBMISSION:-587}:587"
+    environment:
+      MAIL_NAME: need-shit.fun
+      MAIL_HOST: need-shit.fun
+    volumes:
+      - smtp_data:/var/spool/exim4
+      - smtp_logs:/var/log/exim4
+    healthcheck:
+      test: ["CMD-SHELL", "nc -z localhost 25 || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+      start_period: 10s
   postgres_db:
     image: postgres:16-alpine
     volumes:
@@ -63,6 +80,17 @@ services:
     ports:
       - "${PORT}:${PORT}" # API port a .env-ből
     environment:
+      # SMTP beállítások
+      USE_EMAIL: ${USE_EMAIL}
+      EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST:-smtp}
+      EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT:-587}
+      EMAIL_SMTP_USER: ${EMAIL_SMTP_USER}
+      EMAIL_SMTP_PASS: ${EMAIL_SMTP_PASS}
+      EMAIL_SMTP_SECURE: ${EMAIL_SMTP_SECURE}
+      EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS}
+      VERIFY_EMAIL_URL: ${VERIFY_EMAIL_URL}
+      PASSWORD_RESET_URL: ${PASSWORD_RESET_URL}
+      CHANGE_EMAIL_URL: ${CHANGE_EMAIL_URL}
       # Itt adjuk át a .env változóit a Vendure konténernek
       DB_TYPE: ${DB_TYPE}
       DB_HOST: ${DB_HOST}
@@ -106,6 +134,17 @@ services:
   vendure-worker:
     build: .
     environment:
+      # SMTP beállítások
+      USE_EMAIL: ${USE_EMAIL}
+      EMAIL_SMTP_HOST: ${EMAIL_SMTP_HOST:-smtp}
+      EMAIL_SMTP_PORT: ${EMAIL_SMTP_PORT:-587}
+      EMAIL_SMTP_USER: ${EMAIL_SMTP_USER}
+      EMAIL_SMTP_PASS: ${EMAIL_SMTP_PASS}
+      EMAIL_SMTP_SECURE: ${EMAIL_SMTP_SECURE}
+      EMAIL_FROM_ADDRESS: ${EMAIL_FROM_ADDRESS}
+      VERIFY_EMAIL_URL: ${VERIFY_EMAIL_URL}
+      PASSWORD_RESET_URL: ${PASSWORD_RESET_URL}
+      CHANGE_EMAIL_URL: ${CHANGE_EMAIL_URL}
       # Ugyanazok a környezeti változók, mint a szervernek
       DB_TYPE: ${DB_TYPE}
       DB_HOST: ${DB_HOST}
@@ -152,6 +191,14 @@ volumes:
     labels:
       - "io.vendure.create.name=vendure-default"
   elasticsearch_data: 
+    driver: local
+    labels:
+      - "io.vendure.create.name=vendure-default"
+  smtp_data:
+    driver: local
+    labels:
+      - "io.vendure.create.name=vendure-default"
+  smtp_logs:
     driver: local
     labels:
       - "io.vendure.create.name=vendure-default"

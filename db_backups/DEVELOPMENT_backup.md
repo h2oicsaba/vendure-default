@@ -123,3 +123,5 @@ NODE_ENV=production
 - Always verify the integrity of your backups
 - Consider using `--clean` with `pg_dump` to include DROP statements
 - Test your backup and restore procedures regularly
+
+      "_comment": "Helyi adatbázis beállítás: postgresql://need-it:zsolika@localhost:5432/vendure"
