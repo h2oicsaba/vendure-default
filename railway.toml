@@ -38,14 +38,10 @@ VERIFY_EMAIL_URL = "https://need-shit.fun/verify"
 PASSWORD_RESET_URL = "https://need-shit.fun/password-reset"
 CHANGE_EMAIL_URL = "https://need-shit.fun/verify-email-address-change"
 
-# SMTP beállítások a Docker SMTP szerverhez
-EMAIL_SMTP_HOST = "smtp"
-EMAIL_SMTP_PORT = "587"
+# SMTP beállítások a VPS-en futó SMTP szerverhez
+EMAIL_SMTP_HOST = "mail.need-shit.fun"
+EMAIL_SMTP_PORT = "25"
 EMAIL_SMTP_USER = "noreply@need-shit.fun"
-EMAIL_SMTP_PASS = "erős_jelszó_ide"
+EMAIL_SMTP_PASS = "superadmin_zsolika
 EMAIL_SMTP_SECURE = "false"
 EMAIL_FROM_ADDRESS = "\"Vendure Store\" <noreply@need-shit.fun>"
-
-# SMTP szerver beállítások
-SMTP_HOST_PORT = "25"
-SMTP_HOST_PORT_SUBMISSION = "587"
