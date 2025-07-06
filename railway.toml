@@ -35,7 +35,6 @@ EXPRESS_DISABLE_RATE_LIMIT = "true"
 SUPERADMIN_USERNAME = "superadmin"
 SUPERADMIN_PASSWORD = "sensitive_data_stored_in_the_cloud"
 
-
 # Email beállítások
 USE_EMAIL = "advanced"  
 VERIFY_EMAIL_URL = "https://need-shit.fun/verify"
@@ -47,7 +46,7 @@ EMAIL_SMTP_PORT = "25"
 EMAIL_SMTP_USER = "noreply@need-shit.fun"
 EMAIL_SMTP_PASS = "sensitive_data_stored_in_the_cloud"
 EMAIL_SMTP_SECURE = "false"
-EMAIL_FROM_ADDRESS = "Vendure Store <noreply@need-shit.fun>"
+EMAIL_FROM_ADDRESS = "\"Vendure Store\" <noreply@need-shit.fun>"
 
 # Asset kezelés beállításai
 USE_ASSET_STORAGE = "advanced"
