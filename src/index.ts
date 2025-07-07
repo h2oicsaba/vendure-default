@@ -17,6 +17,18 @@ console.log('Alkalmazás indítása...');
 console.log('Aktuális könyvtár:', process.cwd());
 console.log('Környezeti változók:', Object.keys(process.env).join(', '));
 
+// Email-lel kapcsolatos környezeti változók részletes naplózása
+console.log('\nEmail beállítások ellenőrzése:');
+console.log('USE_EMAIL:', process.env.USE_EMAIL);
+console.log('EMAIL_FROM_ADDRESS:', process.env.EMAIL_FROM_ADDRESS);
+console.log('VERIFY_EMAIL_URL:', process.env.VERIFY_EMAIL_URL);
+console.log('PASSWORD_RESET_URL:', process.env.PASSWORD_RESET_URL);
+console.log('CHANGE_EMAIL_URL:', process.env.CHANGE_EMAIL_URL);
+console.log('EMAIL_SMTP_HOST:', process.env.EMAIL_SMTP_HOST);
+console.log('EMAIL_SMTP_PORT:', process.env.EMAIL_SMTP_PORT);
+console.log('EMAIL_SMTP_USER:', process.env.EMAIL_SMTP_USER);
+console.log('EMAIL_SMTP_SECURE:', process.env.EMAIL_SMTP_SECURE);
+
 // Automatikus környezet felismerés (Railway vagy lokális)
 const isRailway = process.env.RAILWAY_ENVIRONMENT || process.env.RAILWAY_SERVICE_ID;
 const environment = isRailway ? 'Railway' : 'Lokális';
