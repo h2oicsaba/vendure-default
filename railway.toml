@@ -17,48 +17,8 @@ healthcheckFailureThreshold = 3
 
 [build.environment]
 NODE_ENV = "production"
-NODE_OPTIONS = "--max_old_space_size=1024"
-PORT = "3000"
-PUBLIC_HOST_URL = "https://admin.need-shit.fun"
-
 
 
 [deploy.regions]
 primary = "europe-west1"
 fallback = "us-east1"
-
-[deploy.environment]
-NODE_ENV = "production"
-PORT = "3000"
-TRUST_PROXY = "true"
-EXPRESS_DISABLE_RATE_LIMIT = "true"
-SUPERADMIN_USERNAME = "superadmin"
-SUPERADMIN_PASSWORD = "sensitive_data_stored_in_the_cloud"
-
-# Email beállítások
-USE_EMAIL = "advanced"  
-VERIFY_EMAIL_URL = "https://need-shit.fun/verify"
-PASSWORD_RESET_URL = "https://need-shit.fun/password-reset"
-CHANGE_EMAIL_URL = "https://need-shit.fun/verify-email-address-change"
-# Ideiglenes SMTP beállítások külső szolgáltatóhoz (pl. Gmail)
-# Kérlek cseréld le ezeket a valós adatokra a Railway UI-ban
-EMAIL_SMTP_HOST = "smtp.gmail.com"
-EMAIL_SMTP_PORT = "587"
-EMAIL_SMTP_USER = "your-gmail@gmail.com"
-EMAIL_SMTP_PASS = "sensitive_data_stored_in_the_cloud"
-EMAIL_SMTP_SECURE = "true"
-EMAIL_FROM_ADDRESS = "\"Vendure Store\" <noreply@need-shit.fun>"
-
-# Asset kezelés beállításai
-USE_ASSET_STORAGE = "advanced"
-ASSET_URL_PREFIX = "https://minio.need-shit.fun/vendure-assets/"
-S3_BUCKET = "vendure-assets"
-S3_ACCESS_KEY_ID = "admin"
-S3_SECRET_ACCESS_KEY = "sensitive_data_stored_in_the_cloud"
-S3_ENDPOINT = "https://minio.need-shit.fun"
-S3_REGION = "us-east-1"
-S3_FORCE_PATH_STYLE = "true"
-
-# Egyéb beállítások
-USE_JOB_QUEUE = "default"
-USE_SEARCH = "default"
