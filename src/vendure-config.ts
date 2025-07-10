@@ -156,7 +156,7 @@ export const config: VendureConfig = {
                     type: 'none', // Egyébként nem küld emailt, csak naplózza
                   },
             globalTemplateVars: {
-                fromAddress: process.env.EMAIL_FROM_ADDRESS || (() => { throw new Error('EMAIL_FROM_ADDRESS környezeti változó nincs beállítva!'); })(),
+                fromAddress: process.env.EMAIL_FROM_ADDRESS || 'noreply@need-shit.fun',
                 // Email URL-ek - hibát dobnak, ha nincsenek beállítva
                 verifyEmailAddressUrl: process.env.VERIFY_EMAIL_URL || (() => { throw new Error('VERIFY_EMAIL_URL környezeti változó nincs beállítva!'); })(), 
                 passwordResetUrl: process.env.PASSWORD_RESET_URL || (() => { throw new Error('PASSWORD_RESET_URL környezeti változó nincs beállítva!'); })(),
