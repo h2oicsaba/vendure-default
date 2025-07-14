@@ -3,20 +3,13 @@
 import 'dotenv/config'; // Fontos, hogy ez legyen az ELSŐ import, hogy a .env változók betöltődjenek
 
 // Ellenőrizzük, hogy worker módban fut-e az alkalmazás
-// Több módon is ellenőrizzük, hogy biztos legyen a felismerés
-const isWorkerMode = process.argv.some(arg => arg.includes('worker')) || 
-                    process.env.WORKER_MODE === 'true' || 
-                    process.env.npm_lifecycle_event === 'start:worker' || 
-                    process.argv[1]?.includes('index-worker') ||
-                    process.env.SERVICE_NAME?.includes('worker');
+// Elsősorban a WORKER_MODE környezeti változót használjuk
+const isWorkerMode = process.env.WORKER_MODE === 'true';
 
-// Debug log a környezeti változókról és a worker mód felismeréséről
+// Debug log a worker mód felismeréséről
 console.log('Worker mode detection:', {
     isWorkerMode,
-    processArgv: process.argv,
     workerModeEnv: process.env.WORKER_MODE,
-    npmLifecycleEvent: process.env.npm_lifecycle_event,
-    serviceName: process.env.SERVICE_NAME,
     filename: process.argv[1]
 });
 

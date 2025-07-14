@@ -36,7 +36,7 @@ nixpacks = { version = "node20" }
 nodeVersion = "20"
 
 [service.vendure-worker.deploy]
-startCommand = "node dist/index-worker.js"
+startCommand = "node dist/index-worker-explicit.js"
 restartDelay = 5
 
 [service.vendure-worker.deploy.environment]
