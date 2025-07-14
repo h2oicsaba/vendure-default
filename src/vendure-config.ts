@@ -88,71 +88,10 @@ export const config: VendureConfig = {
     },
     customFields: {}, // Ha nincsenek egyéni mezők, akkor üresen hagyjuk
     
-    plugins: [
+    plugins: isWorkerMode ? [
         // Worker módban csak a szükséges plugineket inicializáljuk
-        // Alap pluginek mindig kellenek
-        
-        // Saját pluginek csak akkor kellenek, ha nem worker módban vagyunk
-        ...(isWorkerMode ? [] : [
-            // Saját csatorna szűrő plugin, ami megakadályozza az alapértelmezett csatornára való visszaesést
-            ChannelFilterPlugin,
-            GraphiqlPlugin.init(),
-            // Asset Server Plugin konfigurációja - különböző storage stratégiával a környezeti változók alapján
-            AssetServerPlugin.init({
-            // @ts-ignore - Az AssetServerPlugin típushibáját figyelmen kívül hagyjuk
-            route: 'assets',
-            assetUploadDir: path.join(__dirname, '../static/assets'),
-            // Ha advanced asset kezelést használunk, akkor S3 storage stratégiát konfigurálunk
-            ...(USE_ADVANCED_ASSETS ? {
-                storageStrategyFactory: () => {
-                    // Ellenőrizzük, hogy a szükséges környezeti változók be vannak-e állítva
-                    if (isWorkerMode) {
-                        // Worker módban dummy értékeket használunk
-                        return new S3AssetStorageStrategy({
-                            bucket: 'worker-mode-bucket',
-                            credentials: {
-                                accessKeyId: 'worker-mode-key',
-                                secretAccessKey: 'worker-mode-secret'
-                            },
-                            endpoint: 'http://localhost:9000',
-                            region: 'us-east-1',
-                            forcePathStyle: true
-                        });
-                    } else {
-                        // Normál módban ellenőrizzük a környezeti változókat
-                        if (!process.env.S3_BUCKET) {
-                            throw new Error('S3_BUCKET környezeti változó nincs beállítva!');
-                        }
-                        if (!process.env.S3_ACCESS_KEY_ID) {
-                            throw new Error('S3_ACCESS_KEY_ID környezeti változó nincs beállítva!');
-                        }
-                        if (!process.env.S3_SECRET_ACCESS_KEY) {
-                            throw new Error('S3_SECRET_ACCESS_KEY környezeti változó nincs beállítva!');
-                        }
-                        
-                        return new S3AssetStorageStrategy({
-                            bucket: process.env.S3_BUCKET,
-                            credentials: {
-                                accessKeyId: process.env.S3_ACCESS_KEY_ID,
-                                secretAccessKey: process.env.S3_SECRET_ACCESS_KEY
-                            },
-                            endpoint: process.env.S3_ENDPOINT,
-                            region: process.env.S3_REGION,
-                            forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
-                            assetUrlPrefix: process.env.ASSET_URL_PREFIX
-                        });
-                    }
-                },
-                // Az assetUrlPrefix beállítása környezeti változóból - ez fogja meghatározni, hogy a frontend honnan tölti le a képeket
-                assetUrlPrefix: process.env.ASSET_URL_PREFIX,
-            } : {}),
-        }),
-        ]),
-        // A DefaultSchedulerPlugin nincs telepítve, ezért kikommentezzük
-        // DefaultSchedulerPlugin.init(),
-
         // Job Queue plugin kiválasztása a környezeti változó alapján
-        // Ez mind worker, mind normál módban szükséges
+        // Ez szükséges a worker módban
         ...(USE_ADVANCED_JOB_QUEUE ? [
             BullMQJobQueuePlugin.init({
                 connection: {
@@ -165,12 +104,68 @@ export const config: VendureConfig = {
         // Search plugin kiválasztása a környezeti változó alapján
         // Az ElasticsearchPlugin nincs telepítve, ezért mindig a DefaultSearchPlugin-t használjuk
         DefaultSearchPlugin,
+    ] : [
+        // Normál módban az összes plugint inicializáljuk
+        
+        // Saját csatorna szűrő plugin, ami megakadályozza az alapértelmezett csatornára való visszaesést
+        ChannelFilterPlugin,
+        GraphiqlPlugin.init(),
+        
+        // Asset Server Plugin konfigurációja - különböző storage stratégiával a környezeti változók alapján
+        AssetServerPlugin.init({
+            // @ts-ignore - Az AssetServerPlugin típushibáját figyelmen kívül hagyjuk
+            route: 'assets',
+            assetUploadDir: path.join(__dirname, '../static/assets'),
+            // Ha advanced asset kezelést használunk, akkor S3 storage stratégiát konfigurálunk
+            ...(USE_ADVANCED_ASSETS ? {
+                storageStrategyFactory: () => {
+                    // Ellenőrizzük, hogy a szükséges környezeti változók be vannak-e állítva
+                    if (!process.env.S3_BUCKET) {
+                        throw new Error('S3_BUCKET környezeti változó nincs beállítva!');
+                    }
+                    if (!process.env.S3_ACCESS_KEY_ID) {
+                        throw new Error('S3_ACCESS_KEY_ID környezeti változó nincs beállítva!');
+                    }
+                    if (!process.env.S3_SECRET_ACCESS_KEY) {
+                        throw new Error('S3_SECRET_ACCESS_KEY környezeti változó nincs beállítva!');
+                    }
+                    
+                    return new S3AssetStorageStrategy({
+                        bucket: process.env.S3_BUCKET,
+                        credentials: {
+                            accessKeyId: process.env.S3_ACCESS_KEY_ID,
+                            secretAccessKey: process.env.S3_SECRET_ACCESS_KEY
+                        },
+                        endpoint: process.env.S3_ENDPOINT,
+                        region: process.env.S3_REGION,
+                        forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
+                        assetUrlPrefix: process.env.ASSET_URL_PREFIX
+                    });
+                },
+                // Az assetUrlPrefix beállítása környezeti változóból - ez fogja meghatározni, hogy a frontend honnan tölti le a képeket
+                assetUrlPrefix: process.env.ASSET_URL_PREFIX,
+            } : {}),
+        }),
+        
+        // A DefaultSchedulerPlugin nincs telepítve, ezért kikommentezzük
+        // DefaultSchedulerPlugin.init(),
+
+        // Job Queue plugin kiválasztása a környezeti változó alapján
+        ...(USE_ADVANCED_JOB_QUEUE ? [
+            BullMQJobQueuePlugin.init({
+                connection: {
+                    host: process.env.REDIS_HOST,
+                    port: +process.env.REDIS_PORT!,
+                    password: process.env.REDIS_PASSWORD,
+                }
+            }),
+        ] : [
+            DefaultJobQueuePlugin.init({ useDatabaseForBuffer: true }),
+        ]),
             
         // Itt volt korábban a VPS asset pluginek konfigurációja, de eltávolítottuk
 
-        // Email plugin csak akkor kell, ha nem worker módban vagyunk
-        ...(isWorkerMode ? [] : [
-            EmailPlugin.init({
+        EmailPlugin.init({
             devMode: process.env.USE_EMAIL !== 'advanced' ? true : false as true, // Ha nem advanced, akkor devMode
             outputPath: path.join(__dirname, '../static/email/test-emails'),
             route: 'mailbox',
@@ -191,18 +186,14 @@ export const config: VendureConfig = {
                     type: 'none', // Egyébként nem küld emailt, csak naplózza
                   },
             globalTemplateVars: {
-                // Ha worker módban vagyunk, akkor nem követeljük meg az email környezeti változókat
-                fromAddress: isWorkerMode ? 'worker-mode@example.com' : (process.env.EMAIL_FROM_ADDRESS || (() => { throw new Error('EMAIL_FROM_ADDRESS környezeti változó nincs beállítva!'); })()),
-                verifyEmailAddressUrl: isWorkerMode ? 'http://example.com/verify' : (process.env.VERIFY_EMAIL_URL || (() => { throw new Error('VERIFY_EMAIL_URL környezeti változó nincs beállítva!'); })()),
-                passwordResetUrl: isWorkerMode ? 'http://example.com/reset' : (process.env.PASSWORD_RESET_URL || (() => { throw new Error('PASSWORD_RESET_URL környezeti változó nincs beállítva!'); })()),
-                changeEmailAddressUrl: isWorkerMode ? 'http://example.com/change-email' : (process.env.CHANGE_EMAIL_URL || (() => { throw new Error('CHANGE_EMAIL_URL környezeti változó nincs beállítva!'); })()),
+                fromAddress: process.env.EMAIL_FROM_ADDRESS || (() => { throw new Error('EMAIL_FROM_ADDRESS környezeti változó nincs beállítva!'); })(),
+                verifyEmailAddressUrl: process.env.VERIFY_EMAIL_URL || (() => { throw new Error('VERIFY_EMAIL_URL környezeti változó nincs beállítva!'); })(),
+                passwordResetUrl: process.env.PASSWORD_RESET_URL || (() => { throw new Error('PASSWORD_RESET_URL környezeti változó nincs beállítva!'); })(),
+                changeEmailAddressUrl: process.env.CHANGE_EMAIL_URL || (() => { throw new Error('CHANGE_EMAIL_URL környezeti változó nincs beállítva!'); })(),
             },
         }),
-        ]),
         
-        // Admin UI plugin csak akkor kell, ha nem worker módban vagyunk
-        ...(isWorkerMode ? [] : [
-            AdminUiPlugin.init({
+        AdminUiPlugin.init({
             route: 'admin',
             port: serverPort,
             adminUiConfig: {
@@ -223,6 +214,5 @@ export const config: VendureConfig = {
                 // }
             },
         }),
-        ]),
     ],
 };
