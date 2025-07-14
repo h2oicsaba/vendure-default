@@ -188,9 +188,11 @@ export const config: VendureConfig = {
                     port: Number(process.env.EMAIL_SMTP_PORT) || 587,
                     auth: {
                         user: process.env.EMAIL_SMTP_USER,
-                        pass: process.env.EMAIL_SMTP_PASS,
+                        pass: process.env.EMAIL_SMTP_PASS || (() => { throw new Error('EMAIL_SMTP_PASS környezeti változó nincs beállítva!'); })(),
                     },
                     secure: process.env.EMAIL_SMTP_SECURE === 'true',
+                    debug: true, // Debug mód bekapcsolása
+                    logger: true, // Logger bekapcsolása
                   }
                 : {
                     type: 'none', // Egyébként nem küld emailt, csak naplózza
