@@ -5,6 +5,9 @@ import 'dotenv/config'; // Fontos, hogy ez legyen az ELSŐ import, hogy a .env v
 // Ellenőrizzük, hogy worker módban fut-e az alkalmazás
 // Ha a fájlnév tartalmazza a 'worker' szót, akkor worker módban vagyunk
 const isWorkerMode = process.argv[1]?.includes('worker');
+
+// Worker módban csak az adatbázis és job queue pluginekre van szükség
+// Más plugineket nem kell inicializálni
 import path from 'path';
 import { Application } from 'express';
 
@@ -86,11 +89,16 @@ export const config: VendureConfig = {
     customFields: {}, // Ha nincsenek egyéni mezők, akkor üresen hagyjuk
     
     plugins: [
-        // Saját csatorna szűrő plugin, ami megakadályozza az alapértelmezett csatornára való visszaesést
-        ChannelFilterPlugin,
-        GraphiqlPlugin.init(),
-        // Asset Server Plugin konfigurációja - különböző storage stratégiával a környezeti változók alapján
-        AssetServerPlugin.init({
+        // Worker módban csak a szükséges plugineket inicializáljuk
+        // Alap pluginek mindig kellenek
+        
+        // Saját pluginek csak akkor kellenek, ha nem worker módban vagyunk
+        ...(isWorkerMode ? [] : [
+            // Saját csatorna szűrő plugin, ami megakadályozza az alapértelmezett csatornára való visszaesést
+            ChannelFilterPlugin,
+            GraphiqlPlugin.init(),
+            // Asset Server Plugin konfigurációja - különböző storage stratégiával a környezeti változók alapján
+            AssetServerPlugin.init({
             // @ts-ignore - Az AssetServerPlugin típushibáját figyelmen kívül hagyjuk
             route: 'assets',
             assetUploadDir: path.join(__dirname, '../static/assets'),
@@ -139,10 +147,12 @@ export const config: VendureConfig = {
                 assetUrlPrefix: process.env.ASSET_URL_PREFIX,
             } : {}),
         }),
+        ]),
         // A DefaultSchedulerPlugin nincs telepítve, ezért kikommentezzük
         // DefaultSchedulerPlugin.init(),
 
         // Job Queue plugin kiválasztása a környezeti változó alapján
+        // Ez mind worker, mind normál módban szükséges
         ...(USE_ADVANCED_JOB_QUEUE ? [
             BullMQJobQueuePlugin.init({
                 connection: {
@@ -158,7 +168,9 @@ export const config: VendureConfig = {
             
         // Itt volt korábban a VPS asset pluginek konfigurációja, de eltávolítottuk
 
-        EmailPlugin.init({
+        // Email plugin csak akkor kell, ha nem worker módban vagyunk
+        ...(isWorkerMode ? [] : [
+            EmailPlugin.init({
             devMode: process.env.USE_EMAIL !== 'advanced' ? true : false as true, // Ha nem advanced, akkor devMode
             outputPath: path.join(__dirname, '../static/email/test-emails'),
             route: 'mailbox',
@@ -186,7 +198,11 @@ export const config: VendureConfig = {
                 changeEmailAddressUrl: isWorkerMode ? 'http://example.com/change-email' : (process.env.CHANGE_EMAIL_URL || (() => { throw new Error('CHANGE_EMAIL_URL környezeti változó nincs beállítva!'); })()),
             },
         }),
-        AdminUiPlugin.init({
+        ]),
+        
+        // Admin UI plugin csak akkor kell, ha nem worker módban vagyunk
+        ...(isWorkerMode ? [] : [
+            AdminUiPlugin.init({
             route: 'admin',
             port: serverPort,
             adminUiConfig: {
@@ -207,5 +223,6 @@ export const config: VendureConfig = {
                 // }
             },
         }),
+        ]),
     ],
 };
