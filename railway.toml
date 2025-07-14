@@ -41,6 +41,7 @@ restartDelay = 5
 
 [service.vendure-worker.build.environment]
 NODE_ENV = "production"
+WORKER_MODE = "true"
 
 [service.vendure-worker.deploy.regions]
 primary = "europe-west1"

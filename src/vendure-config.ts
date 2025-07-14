@@ -3,8 +3,11 @@
 import 'dotenv/config'; // Fontos, hogy ez legyen az ELSŐ import, hogy a .env változók betöltődjenek
 
 // Ellenőrizzük, hogy worker módban fut-e az alkalmazás
-// Ha a fájlnév tartalmazza a 'worker' szót, akkor worker módban vagyunk
-const isWorkerMode = process.argv[1]?.includes('worker');
+// Több módon is ellenőrizzük, hogy biztos legyen a felismerés
+const isWorkerMode = process.argv.some(arg => arg.includes('worker')) || 
+                    process.env.WORKER_MODE === 'true' || 
+                    process.env.npm_lifecycle_event === 'start:worker' || 
+                    process.argv[1]?.includes('index-worker');
 
 // Worker módban csak az adatbázis és job queue pluginekre van szükség
 // Más plugineket nem kell inicializálni
