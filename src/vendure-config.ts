@@ -164,6 +164,77 @@ export const config: VendureConfig = {
         // Search plugin kiválasztása a környezeti változó alapján
         // Az ElasticsearchPlugin nincs telepítve, ezért mindig a DefaultSearchPlugin-t használjuk
         DefaultSearchPlugin,
+        
+        // EmailPlugin hozzáadása a worker módban is, mivel az email küldés a worker feladata
+        EmailPlugin.init({
+            devMode: process.env.USE_EMAIL !== 'advanced' ? true : false as true,
+            outputPath: path.join(__dirname, '../static/email/test-emails'),
+            route: 'mailbox',
+            handlers: defaultEmailHandlers,
+            templateLoader: new FileBasedTemplateLoader(path.join(__dirname, '../static/email/templates')),
+            transport: process.env.USE_EMAIL === 'advanced' 
+                ? (() => {
+                    // Ellenőrizzük, hogy minden szükséges környezeti változó be van-e állítva
+                    if (!process.env.EMAIL_SMTP_HOST) {
+                        throw new Error('EMAIL_SMTP_HOST környezeti változó nincs beállítva!');
+                    }
+                    if (!process.env.EMAIL_SMTP_USER) {
+                        throw new Error('EMAIL_SMTP_USER környezeti változó nincs beállítva!');
+                    }
+                    if (!process.env.EMAIL_SMTP_PASS) {
+                        throw new Error('EMAIL_SMTP_PASS környezeti változó nincs beállítva!');
+                    }
+                    
+                    // Részletes naplózás az email küldés előtt
+                    console.log('Worker: Email küldés konfiguráció:', {
+                        host: process.env.EMAIL_SMTP_HOST,
+                        port: Number(process.env.EMAIL_SMTP_PORT) || 587,
+                        user: process.env.EMAIL_SMTP_USER,
+                        secure: process.env.EMAIL_SMTP_SECURE === 'true',
+                        fromAddress: process.env.EMAIL_FROM_ADDRESS
+                    });
+                    
+                    return {
+                        type: 'smtp',
+                        host: process.env.EMAIL_SMTP_HOST,
+                        port: Number(process.env.EMAIL_SMTP_PORT) || 587,
+                        auth: {
+                            user: process.env.EMAIL_SMTP_USER,
+                            pass: process.env.EMAIL_SMTP_PASS,
+                        },
+                        secure: process.env.EMAIL_SMTP_SECURE === 'true',
+                        requireTLS: true, // STARTTLS használata
+                        tls: {
+                            rejectUnauthorized: false // SSL/TLS problémák esetén
+                        },
+                        debug: true, // Debug mód bekapcsolása
+                        logger: true, // Logger bekapcsolása
+                    };
+                })()
+                : {
+                    type: 'none', // Egyébként nem küld emailt, csak naplózza
+                  },
+            globalTemplateVars: {
+                // Csak az egyszerű email címet használjuk, nem a formázott címet
+                fromAddress: (() => {
+                    const emailAddress = process.env.EMAIL_FROM_ADDRESS || '';
+                    // Ha formázott cím (tartalmaz < > karaktereket), akkor kinyerjük az email címet
+                    const match = emailAddress.match(/<([^>]+)>/);
+                    if (match && match[1]) {
+                        console.log('Worker: Formázott email cím átalakítása egyszerű címmé:', emailAddress, '->', match[1]);
+                        return match[1]; // Visszaadjuk csak az email címet
+                    }
+                    // Ha nincs beállítva vagy üres, hibát dobunk
+                    if (!emailAddress) {
+                        throw new Error('EMAIL_FROM_ADDRESS környezeti változó nincs beállítva!');
+                    }
+                    return emailAddress; // Ha nem formázott cím, akkor visszaadjuk változatlanul
+                })(),
+                verifyEmailAddressUrl: process.env.VERIFY_EMAIL_URL || (() => { throw new Error('VERIFY_EMAIL_URL környezeti változó nincs beállítva!'); })(),
+                passwordResetUrl: process.env.PASSWORD_RESET_URL || (() => { throw new Error('PASSWORD_RESET_URL környezeti változó nincs beállítva!'); })(),
+                changeEmailAddressUrl: process.env.CHANGE_EMAIL_URL || (() => { throw new Error('CHANGE_EMAIL_URL környezeti változó nincs beállítva!'); })(),
+            },
+        }),
     ] : [
         // Normál módban az összes plugint inicializáljuk
         
@@ -293,6 +364,10 @@ export const config: VendureConfig = {
                             pass: process.env.EMAIL_SMTP_PASS,
                         },
                         secure: process.env.EMAIL_SMTP_SECURE === 'true',
+                        requireTLS: true, // STARTTLS használata, mint a Python példában
+                        tls: {
+                            rejectUnauthorized: false // Ha SSL/TLS problémák lennének
+                        },
                         debug: true, // Debug mód bekapcsolása
                         logger: true, // Logger bekapcsolása
                     };
@@ -301,7 +376,22 @@ export const config: VendureConfig = {
                     type: 'none', // Egyébként nem küld emailt, csak naplózza
                   },
             globalTemplateVars: {
-                fromAddress: process.env.EMAIL_FROM_ADDRESS || (() => { throw new Error('EMAIL_FROM_ADDRESS környezeti változó nincs beállítva!'); })(),
+                // Csak az egyszerű email címet használjuk, nem a formázott címet
+                // Ha formázott cím van (pl. "Vendure Store" <noreply@need-shit.fun>), akkor kinyerjük belőle az email címet
+                fromAddress: (() => {
+                    const emailAddress = process.env.EMAIL_FROM_ADDRESS || '';
+                    // Ha formázott cím (tartalmaz < > karaktereket), akkor kinyerjük az email címet
+                    const match = emailAddress.match(/<([^>]+)>/);
+                    if (match && match[1]) {
+                        console.log('Formázott email cím átalakítása egyszerű címmé:', emailAddress, '->', match[1]);
+                        return match[1]; // Visszaadjuk csak az email címet
+                    }
+                    // Ha nincs beállítva vagy üres, hibát dobunk
+                    if (!emailAddress) {
+                        throw new Error('EMAIL_FROM_ADDRESS környezeti változó nincs beállítva!');
+                    }
+                    return emailAddress; // Ha nem formázott cím, akkor visszaadjuk változatlanul
+                })(),
                 verifyEmailAddressUrl: process.env.VERIFY_EMAIL_URL || (() => { throw new Error('VERIFY_EMAIL_URL környezeti változó nincs beállítva!'); })(),
                 passwordResetUrl: process.env.PASSWORD_RESET_URL || (() => { throw new Error('PASSWORD_RESET_URL környezeti változó nincs beállítva!'); })(),
                 changeEmailAddressUrl: process.env.CHANGE_EMAIL_URL || (() => { throw new Error('CHANGE_EMAIL_URL környezeti változó nincs beállítva!'); })(),
