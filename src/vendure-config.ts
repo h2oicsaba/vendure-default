@@ -118,6 +118,9 @@ export const config: VendureConfig = {
         ChannelFilterPlugin,
         GraphiqlPlugin.init(),
         
+        // Search plugin hozzáadása a normál módhoz is
+        DefaultSearchPlugin,
+        
         // Asset Server Plugin konfigurációja - különböző storage stratégiával a környezeti változók alapján
         AssetServerPlugin.init({
             // @ts-ignore - Az AssetServerPlugin típushibáját figyelmen kívül hagyjuk
