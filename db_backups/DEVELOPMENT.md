@@ -23,7 +23,7 @@ pg_restore -h localhost -p 5432 -U postgres -d vendure -c vendure_dump.backup
 
 Railway adatbázis visszaállítása:
 ```bash
-PGPASSWORD=iiTXwbZNrwJnJoXHJmHQBlkPZkCNkVvG psql -h shinkansen.proxy.rlwy.net -p 46715 -U postgres -d vendure -f vendure_backup.sql
+PGPASSWORD=VyNAVgcwaPanwtxkgKZIecgdSnVetYoH psql -h tramway.proxy.rlwy.net -p 51956 -U postgres -d railway -f 12_vendure_fix_channel_languages.sql 
 ```
 
 ## 3. Adatbázis törlése és újralétrehozása

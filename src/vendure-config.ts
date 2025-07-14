@@ -1,6 +1,10 @@
 // src/vendure-config.ts
 
 import 'dotenv/config'; // Fontos, hogy ez legyen az ELSŐ import, hogy a .env változók betöltődjenek
+
+// Ellenőrizzük, hogy worker módban fut-e az alkalmazás
+// Ha a fájlnév tartalmazza a 'worker' szót, akkor worker módban vagyunk
+const isWorkerMode = process.argv[1]?.includes('worker');
 import path from 'path';
 import { Application } from 'express';
 
@@ -94,28 +98,42 @@ export const config: VendureConfig = {
             ...(USE_ADVANCED_ASSETS ? {
                 storageStrategyFactory: () => {
                     // Ellenőrizzük, hogy a szükséges környezeti változók be vannak-e állítva
-                    if (!process.env.S3_BUCKET) {
-                        throw new Error('S3_BUCKET környezeti változó nincs beállítva!');
+                    if (isWorkerMode) {
+                        // Worker módban dummy értékeket használunk
+                        return new S3AssetStorageStrategy({
+                            bucket: 'worker-mode-bucket',
+                            credentials: {
+                                accessKeyId: 'worker-mode-key',
+                                secretAccessKey: 'worker-mode-secret'
+                            },
+                            endpoint: 'http://localhost:9000',
+                            region: 'us-east-1',
+                            forcePathStyle: true
+                        });
+                    } else {
+                        // Normál módban ellenőrizzük a környezeti változókat
+                        if (!process.env.S3_BUCKET) {
+                            throw new Error('S3_BUCKET környezeti változó nincs beállítva!');
+                        }
+                        if (!process.env.S3_ACCESS_KEY_ID) {
+                            throw new Error('S3_ACCESS_KEY_ID környezeti változó nincs beállítva!');
+                        }
+                        if (!process.env.S3_SECRET_ACCESS_KEY) {
+                            throw new Error('S3_SECRET_ACCESS_KEY környezeti változó nincs beállítva!');
+                        }
+                        
+                        return new S3AssetStorageStrategy({
+                            bucket: process.env.S3_BUCKET,
+                            credentials: {
+                                accessKeyId: process.env.S3_ACCESS_KEY_ID,
+                                secretAccessKey: process.env.S3_SECRET_ACCESS_KEY
+                            },
+                            endpoint: process.env.S3_ENDPOINT,
+                            region: process.env.S3_REGION,
+                            forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
+                            assetUrlPrefix: process.env.ASSET_URL_PREFIX
+                        });
                     }
-                    if (!process.env.S3_ACCESS_KEY_ID) {
-                        throw new Error('S3_ACCESS_KEY_ID környezeti változó nincs beállítva!');
-                    }
-                    if (!process.env.S3_SECRET_ACCESS_KEY) {
-                        throw new Error('S3_SECRET_ACCESS_KEY környezeti változó nincs beállítva!');
-                    }
-                    
-                    return new S3AssetStorageStrategy({
-                        bucket: process.env.S3_BUCKET,
-                        credentials: {
-                            accessKeyId: process.env.S3_ACCESS_KEY_ID,
-                            secretAccessKey: process.env.S3_SECRET_ACCESS_KEY,
-                        },
-                        endpoint: process.env.S3_ENDPOINT,
-                        region: process.env.S3_REGION,
-                        // A string 'true' értéket boolean true-ra konvertáljuk
-                        forcePathStyle: process.env.S3_FORCE_PATH_STYLE === 'true',
-                        assetUrlPrefix: process.env.ASSET_URL_PREFIX,
-                    });
                 },
                 // Az assetUrlPrefix beállítása környezeti változóból - ez fogja meghatározni, hogy a frontend honnan tölti le a képeket
                 assetUrlPrefix: process.env.ASSET_URL_PREFIX,
@@ -161,10 +179,11 @@ export const config: VendureConfig = {
                     type: 'none', // Egyébként nem küld emailt, csak naplózza
                   },
             globalTemplateVars: {
-                fromAddress: process.env.EMAIL_FROM_ADDRESS || (() => { throw new Error('EMAIL_FROM_ADDRESS környezeti változó nincs beállítva!'); })(),
-                verifyEmailAddressUrl: process.env.VERIFY_EMAIL_URL || (() => { throw new Error('VERIFY_EMAIL_URL környezeti változó nincs beállítva!'); })(),
-                passwordResetUrl: process.env.PASSWORD_RESET_URL || (() => { throw new Error('PASSWORD_RESET_URL környezeti változó nincs beállítva!'); })(),
-                changeEmailAddressUrl: process.env.CHANGE_EMAIL_URL || (() => { throw new Error('CHANGE_EMAIL_URL környezeti változó nincs beállítva!'); })(),
+                // Ha worker módban vagyunk, akkor nem követeljük meg az email környezeti változókat
+                fromAddress: isWorkerMode ? 'worker-mode@example.com' : (process.env.EMAIL_FROM_ADDRESS || (() => { throw new Error('EMAIL_FROM_ADDRESS környezeti változó nincs beállítva!'); })()),
+                verifyEmailAddressUrl: isWorkerMode ? 'http://example.com/verify' : (process.env.VERIFY_EMAIL_URL || (() => { throw new Error('VERIFY_EMAIL_URL környezeti változó nincs beállítva!'); })()),
+                passwordResetUrl: isWorkerMode ? 'http://example.com/reset' : (process.env.PASSWORD_RESET_URL || (() => { throw new Error('PASSWORD_RESET_URL környezeti változó nincs beállítva!'); })()),
+                changeEmailAddressUrl: isWorkerMode ? 'http://example.com/change-email' : (process.env.CHANGE_EMAIL_URL || (() => { throw new Error('CHANGE_EMAIL_URL környezeti változó nincs beállítva!'); })()),
             },
         }),
         AdminUiPlugin.init({
@@ -172,6 +191,10 @@ export const config: VendureConfig = {
             port: serverPort,
             adminUiConfig: {
                 apiHost: IS_DEV ? `http://localhost:${serverPort}` : (() => {
+                    if (isWorkerMode) {
+                        // Worker módban dummy értéket használunk
+                        return 'http://worker-mode-host';
+                    }
                     if (!process.env.PUBLIC_HOST_URL) {
                         throw new Error('A PUBLIC_HOST_URL környezeti változót be kell állítani éles környezetben!');
                     }
