@@ -21,6 +21,9 @@ import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 // Importáljuk a saját S3 asset storage stratégiánkat
 import { S3AssetStorageStrategy } from './plugins/s3_assets/s3-asset-storage-strategy';
 
+// Importáljuk a saját csatorna szűrő plugint
+import { ChannelFilterPlugin } from './plugins/channel-filter';
+
 // ----------------------------------------------------
 
 // Konfigurációs választók a környezeti változókból
@@ -79,6 +82,8 @@ export const config: VendureConfig = {
     customFields: {}, // Ha nincsenek egyéni mezők, akkor üresen hagyjuk
     
     plugins: [
+        // Saját csatorna szűrő plugin, ami megakadályozza az alapértelmezett csatornára való visszaesést
+        ChannelFilterPlugin,
         GraphiqlPlugin.init(),
         // Asset Server Plugin konfigurációja - különböző storage stratégiával a környezeti változók alapján
         AssetServerPlugin.init({
@@ -156,11 +161,10 @@ export const config: VendureConfig = {
                     type: 'none', // Egyébként nem küld emailt, csak naplózza
                   },
             globalTemplateVars: {
-                fromAddress: process.env.EMAIL_FROM_ADDRESS || 'noreply@need-shit.fun',
-                // Email URL-ek - hibát dobnak, ha nincsenek beállítva
-                verifyEmailAddressUrl: process.env.VERIFY_EMAIL_URL || (() => { throw new Error('VERIFY_EMAIL_URL környezeti változó nincs beállítva!'); })(), 
+                fromAddress: process.env.EMAIL_FROM_ADDRESS || (() => { throw new Error('EMAIL_FROM_ADDRESS környezeti változó nincs beállítva!'); })(),
+                verifyEmailAddressUrl: process.env.VERIFY_EMAIL_URL || (() => { throw new Error('VERIFY_EMAIL_URL környezeti változó nincs beállítva!'); })(),
                 passwordResetUrl: process.env.PASSWORD_RESET_URL || (() => { throw new Error('PASSWORD_RESET_URL környezeti változó nincs beállítva!'); })(),
-                changeEmailAddressUrl: process.env.CHANGE_EMAIL_URL || (() => { throw new Error('CHANGE_EMAIL_URL környezeti változó nincs beállítva!'); })()
+                changeEmailAddressUrl: process.env.CHANGE_EMAIL_URL || (() => { throw new Error('CHANGE_EMAIL_URL környezeti változó nincs beállítva!'); })(),
             },
         }),
         AdminUiPlugin.init({

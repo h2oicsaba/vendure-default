@@ -1,11 +1,14 @@
-[build]
+# Ez a konfiguráció csak a vendure-default szolgáltatásra vonatkozik
+[service.vendure-default]
+
+[service.vendure-default.build]
 builder = "nixpacks"
 buildCommand = "rm -rf dist && ./node_modules/.bin/tsc"
 installCommand = "npm ci"
 nixpacks = { version = "node20" }
 nodeVersion = "20"
 
-[deploy]
+[service.vendure-default.deploy]
 startCommand = "node dist/index.js"
 healthcheckPath = "/health"
 healthcheckTimeout = 10
@@ -15,10 +18,12 @@ healthcheckStartPeriod = 30
 healthcheckSuccessThreshold = 1
 healthcheckFailureThreshold = 3
 
-[build.environment]
+[service.vendure-default.build.environment]
 NODE_ENV = "production"
 
-
-[deploy.regions]
+[service.vendure-default.deploy.regions]
 primary = "europe-west1"
 fallback = "us-east1"
+
+# A Postgres szolgáltatás nem használja ezt a konfigurációt
+# Postgres szolgáltatás egy egyszerű adatbázis szolgáltatás, nem Node.js alkalmazás

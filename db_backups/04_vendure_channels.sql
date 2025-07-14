@@ -299,7 +299,7 @@ BEGIN
     INSERT INTO asset_channels_channel ("assetId", "channelId")
     SELECT 
         "assetId", 
-        (SELECT id FROM channel WHERE code = 'slovak')
+        (SELECT id FROM channel WHERE code = 'slovak_channel')
     FROM 
         asset_channels_channel
     WHERE 
