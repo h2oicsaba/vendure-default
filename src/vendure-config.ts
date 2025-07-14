@@ -13,17 +13,70 @@ console.log('Worker mode detection:', {
     filename: process.argv[1]
 });
 
+// Email küldés részletes naplózása
+const logEmailDetails = () => {
+    console.log('Email küldés részletes naplózása aktiválva');
+    // Monkey patch a nodemailer createTransport függvényét
+    try {
+        const nodemailer = require('nodemailer');
+        const originalCreateTransport = nodemailer.createTransport;
+        // @ts-ignore - Ignoráljuk a típushibákat a monkey patch-nél
+        nodemailer.createTransport = function(options: any) {
+            console.log('Nodemailer transport létrehozva:', JSON.stringify(options, null, 2));
+            const transport = originalCreateTransport.apply(this, arguments);
+            const originalSendMail = transport.sendMail;
+            // @ts-ignore - Ignoráljuk a típushibákat a monkey patch-nél
+            transport.sendMail = function(mailOptions: any, callback: any) {
+                console.log('Email küldési kísérlet:', {
+                    to: mailOptions.to,
+                    from: mailOptions.from,
+                    subject: mailOptions.subject,
+                    text: mailOptions.text ? mailOptions.text.substring(0, 100) + '...' : undefined,
+                    html: mailOptions.html ? 'HTML tartalom (nem mutatjuk)' : undefined
+                });
+                // @ts-ignore - Ignoráljuk a típushibákat a monkey patch-nél
+                return originalSendMail.call(this, mailOptions, function(err: any, info: any) {
+                    if (err) {
+                        console.error('Email küldési hiba:', err);
+                    } else {
+                        console.log('Email sikeresen elküldve:', info);
+                    }
+                    if (callback) {
+                        callback(err, info);
+                    }
+                });
+            };
+            return transport;
+        };
+        console.log('Nodemailer monkey patch sikeresen alkalmazva');
+    } catch (error: any) {
+        console.error('Hiba a nodemailer monkey patch során:', error);
+    }
+};
+
+// Ha nem worker módban vagyunk, akkor aktiváljuk az email naplózást
+if (!isWorkerMode) {
+    logEmailDetails();
+}
+
 // Worker módban csak az adatbázis és job queue pluginekre van szükség
 // Más plugineket nem kell inicializálni
 import path from 'path';
 import { Application } from 'express';
 
 import {
+    DefaultAssetNamingStrategy,
     dummyPaymentHandler,
     DefaultJobQueuePlugin,
     DefaultSearchPlugin,
     LanguageCode,
-    VendureConfig
+    VendureConfig,
+    bootstrap,
+    bootstrapWorker,
+    runMigrations,
+    DefaultLogger,
+    LogLevel,
+    EventBus
 } from '@vendure/core';
 // Az ElasticsearchPlugin nincs telepítve, ezért használjuk a DefaultSearchPlugin-t
 import { BullMQJobQueuePlugin } from '@vendure/job-queue-plugin/package/bullmq';
@@ -202,6 +255,34 @@ export const config: VendureConfig = {
                         secure: process.env.EMAIL_SMTP_SECURE === 'true',
                         fromAddress: process.env.EMAIL_FROM_ADDRESS
                     });
+                    
+                    // Teszteljük az SMTP kapcsolatot
+                    try {
+                        const nodemailer = require('nodemailer');
+                        const testTransport = nodemailer.createTransport({
+                            host: process.env.EMAIL_SMTP_HOST,
+                            port: Number(process.env.EMAIL_SMTP_PORT) || 587,
+                            secure: process.env.EMAIL_SMTP_SECURE === 'true',
+                            auth: {
+                                user: process.env.EMAIL_SMTP_USER,
+                                pass: process.env.EMAIL_SMTP_PASS,
+                            },
+                            debug: true,
+                            logger: true
+                        });
+                        
+                        console.log('SMTP kapcsolat tesztelése...');
+                        // @ts-ignore - Ignoráljuk a típushibákat a verify függvénynél
+                        testTransport.verify(function(error: any, success: any) {
+                            if (error) {
+                                console.error('SMTP kapcsolat hiba:', error);
+                            } else {
+                                console.log('SMTP szerver kész az emailek fogadására:', success);
+                            }
+                        });
+                    } catch (error: any) {
+                        console.error('Hiba az SMTP kapcsolat tesztelése során:', error);
+                    }
                     
                     return {
                         type: 'smtp', // Ha advanced, akkor SMTP
