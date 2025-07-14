@@ -1,9 +1,33 @@
-import { bootstrap, runMigrations, DefaultLogger, LogLevel } from '@vendure/core';
+import { bootstrap, bootstrapWorker, runMigrations, DefaultLogger, LogLevel } from '@vendure/core';
 import { AdminUiPlugin } from '@vendure/admin-ui-plugin';
 import { config as baseConfig } from './vendure-config';
 import * as fs from 'fs';
 import * as path from 'path';
 import { HealthModule } from './health/health.module';
+
+// Ellenőrizzük, hogy worker módban vagyunk-e
+// Ha a WORKER_MODE környezeti változó be van állítva, akkor worker módban vagyunk
+const isWorkerMode = process.env.WORKER_MODE === 'true';
+
+// Debug log a worker mód felismeréséről
+console.log('Worker mode detection in index.ts:', {
+    isWorkerMode,
+    workerModeEnv: process.env.WORKER_MODE,
+    filename: process.argv[1]
+});
+
+// Ha worker módban vagyunk, akkor indítsuk el a worker-t és ne folytassuk a normál indítást
+if (isWorkerMode) {
+    console.log('Starting Vendure worker from index.ts...');
+    bootstrapWorker(baseConfig)
+        .then(worker => worker.startJobQueue())
+        .catch(err => {
+            console.log('Worker error:', err);
+            process.exit(1);
+        });
+    // Kilépünk a függvényből, hogy ne fusson tovább a normál indítás
+    process.exit(0);
+}
 
 // Express rate-limit beállítások
 process.env.TRUST_PROXY = '1'; // Számot használunk string formátumban
