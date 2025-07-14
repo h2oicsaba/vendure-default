@@ -54,13 +54,12 @@ const logEmailDetails = () => {
     }
 };
 
-// Ha nem worker módban vagyunk, akkor aktiváljuk az email naplózást
-if (!isWorkerMode) {
-    logEmailDetails();
-}
+// Minden módban aktiváljuk az email naplózást, mivel worker módban is szükség van rá
+// Az email küldés a worker feladata, ezért ott is naplóznunk kell
+logEmailDetails();
 
-// Worker módban csak az adatbázis és job queue pluginekre van szükség
-// Más plugineket nem kell inicializálni
+// Worker módban is szükség van az EmailPlugin-re, mivel az email küldés a worker feladata
+// A worker módban is inicializáljuk a szükséges plugineket
 import path from 'path';
 import { Application } from 'express';
 

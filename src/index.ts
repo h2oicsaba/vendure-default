@@ -20,14 +20,21 @@ console.log('Worker mode detection in index.ts:', {
 if (isWorkerMode) {
     console.log('Starting Vendure worker from index.ts...');
     bootstrapWorker(baseConfig)
-        .then(worker => worker.startJobQueue())
+        .then(worker => {
+            console.log('Worker sikeresen elindult, job queue indítása...');
+            return worker.startJobQueue();
+        })
+        .then(() => {
+            console.log('Worker job queue sikeresen elindult!');
+        })
         .catch(err => {
             console.log('Worker error:', err);
             process.exit(1);
         });
-    // Kilépünk a függvényből, hogy ne fusson tovább a normál indítás
-    process.exit(0);
+    // NEM lépünk ki a process.exit(0)-val, mert az leállítaná a worker folyamatot!
 }
+// Csak akkor folytassuk a normál indítást, ha nem worker módban vagyunk
+else {
 
 // Express rate-limit beállítások
 process.env.TRUST_PROXY = '1'; // Számot használunk string formátumban
@@ -239,3 +246,4 @@ console.log('Migrációk futtatása kezdődik...');
         process.exit(1);
     }
 })();
+}
