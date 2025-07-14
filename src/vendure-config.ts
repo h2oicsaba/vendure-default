@@ -7,7 +7,18 @@ import 'dotenv/config'; // Fontos, hogy ez legyen az ELSŐ import, hogy a .env v
 const isWorkerMode = process.argv.some(arg => arg.includes('worker')) || 
                     process.env.WORKER_MODE === 'true' || 
                     process.env.npm_lifecycle_event === 'start:worker' || 
-                    process.argv[1]?.includes('index-worker');
+                    process.argv[1]?.includes('index-worker') ||
+                    process.env.SERVICE_NAME?.includes('worker');
+
+// Debug log a környezeti változókról és a worker mód felismeréséről
+console.log('Worker mode detection:', {
+    isWorkerMode,
+    processArgv: process.argv,
+    workerModeEnv: process.env.WORKER_MODE,
+    npmLifecycleEvent: process.env.npm_lifecycle_event,
+    serviceName: process.env.SERVICE_NAME,
+    filename: process.argv[1]
+});
 
 // Worker módban csak az adatbázis és job queue pluginekre van szükség
 // Más plugineket nem kell inicializálni

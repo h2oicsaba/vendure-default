@@ -39,6 +39,9 @@ nodeVersion = "20"
 startCommand = "node dist/index-worker.js"
 restartDelay = 5
 
+[service.vendure-worker.deploy.environment]
+WORKER_MODE = "true"
+
 [service.vendure-worker.build.environment]
 NODE_ENV = "production"
 WORKER_MODE = "true"
