@@ -182,18 +182,40 @@ export const config: VendureConfig = {
             handlers: defaultEmailHandlers,
             templateLoader: new FileBasedTemplateLoader(path.join(__dirname, '../static/email/templates')),
             transport: process.env.USE_EMAIL === 'advanced' 
-                ? {
-                    type: 'smtp', // Ha advanced, akkor SMTP
-                    host: process.env.EMAIL_SMTP_HOST,
-                    port: Number(process.env.EMAIL_SMTP_PORT) || 587,
-                    auth: {
+                ? (() => {
+                    // Ellenőrizzük, hogy minden szükséges környezeti változó be van-e állítva
+                    if (!process.env.EMAIL_SMTP_HOST) {
+                        throw new Error('EMAIL_SMTP_HOST környezeti változó nincs beállítva!');
+                    }
+                    if (!process.env.EMAIL_SMTP_USER) {
+                        throw new Error('EMAIL_SMTP_USER környezeti változó nincs beállítva!');
+                    }
+                    if (!process.env.EMAIL_SMTP_PASS) {
+                        throw new Error('EMAIL_SMTP_PASS környezeti változó nincs beállítva!');
+                    }
+                    
+                    // Részletes naplózás az email küldés előtt
+                    console.log('Email küldés konfiguráció:', {
+                        host: process.env.EMAIL_SMTP_HOST,
+                        port: Number(process.env.EMAIL_SMTP_PORT) || 587,
                         user: process.env.EMAIL_SMTP_USER,
-                        pass: process.env.EMAIL_SMTP_PASS || (() => { throw new Error('EMAIL_SMTP_PASS környezeti változó nincs beállítva!'); })(),
-                    },
-                    secure: process.env.EMAIL_SMTP_SECURE === 'true',
-                    debug: true, // Debug mód bekapcsolása
-                    logger: true, // Logger bekapcsolása
-                  }
+                        secure: process.env.EMAIL_SMTP_SECURE === 'true',
+                        fromAddress: process.env.EMAIL_FROM_ADDRESS
+                    });
+                    
+                    return {
+                        type: 'smtp', // Ha advanced, akkor SMTP
+                        host: process.env.EMAIL_SMTP_HOST,
+                        port: Number(process.env.EMAIL_SMTP_PORT) || 587,
+                        auth: {
+                            user: process.env.EMAIL_SMTP_USER,
+                            pass: process.env.EMAIL_SMTP_PASS,
+                        },
+                        secure: process.env.EMAIL_SMTP_SECURE === 'true',
+                        debug: true, // Debug mód bekapcsolása
+                        logger: true, // Logger bekapcsolása
+                    };
+                })()
                 : {
                     type: 'none', // Egyébként nem küld emailt, csak naplózza
                   },

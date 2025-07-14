@@ -21,6 +21,10 @@ healthcheckFailureThreshold = 3
 [service.vendure-default.build.environment]
 NODE_ENV = "production"
 
+[service.vendure-default.deploy.environment]
+# Biztosítjuk, hogy az email küldéshez szükséges környezeti változók elérhetőek legyenek
+# Megjegyzés: Az EMAIL_SMTP_PASS értékét a Railway felületén kell beállítani a shared variables között
+
 [service.vendure-default.deploy.regions]
 primary = "europe-west1"
 fallback = "us-east1"
