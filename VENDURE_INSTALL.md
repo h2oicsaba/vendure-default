@@ -100,10 +100,23 @@ sudo -u postgres createdb vendure_db -O vendure
 ```
 
 ### B.3  Redis 7
+
+#### Lokális telepítés
 ```bash
 sudo apt install -y redis-server
 sudo systemctl enable --now redis-server
 ```
+
+#### Railway Redis
+A Railway platformon a Redis szolgáltatás automatikusan létrehozza a következő környezeti változókat:
+
+- `REDISHOST` - A Redis szerver host neve
+- `REDISPORT` - A Redis szerver portja
+- `REDISPASSWORD` - A Redis szerver jelszó
+- `REDISUSER` - A Redis felhasználónév (ha van)
+- `REDIS_URL` - A teljes Redis kapcsolati URL
+
+Ezeket a változókat használja a Vendure konfigurációban a BullMQJobQueuePlugin.
 
 ### B.4  Elasticsearch 7.17
 ```bash

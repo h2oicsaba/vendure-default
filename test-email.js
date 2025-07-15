@@ -7,7 +7,7 @@ const smtp_port = 587;
 const smtp_user = 'noreply@need-shit.fun';
 const smtp_pass = 'Zsolika22-';  // Figyelem: Éles környezetben ne hardkódold a jelszót!
 
-const from_addr = 'noreply@need-shit.fun';
+const from_addr = '"Vendure Store" <noreply@need-shit.fun>';
 const to_addr = 'csaba.vizi@gmail.com';  // Ide érkezik a teszt email
 
 // Létrehozzuk a transport objektumot

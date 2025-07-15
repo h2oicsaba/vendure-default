@@ -94,11 +94,46 @@ import { ChannelFilterPlugin } from './plugins/channel-filter';
 
 // Konfigurációs választók a környezeti változókból
 const IS_DEV = process.env.APP_ENV === 'dev';
-const USE_ASSET_STORAGE = process.env.USE_ASSET_STORAGE || 'default';
-const USE_ADVANCED_ASSETS = USE_ASSET_STORAGE === 'advanced';
+// Plugin választók - értékük lehet "default" vagy "advanced"
+const USE_ADVANCED_ASSETS = process.env.USE_ASSET_STORAGE === 'advanced';
 const USE_ADVANCED_JOB_QUEUE = process.env.USE_JOB_QUEUE === 'advanced';
 const USE_ADVANCED_SEARCH = process.env.USE_SEARCH === 'advanced';
-const serverPort = +process.env.PORT! || 3000; // Használjuk a .env-ből érkező PORT-ot
+
+// Worker módban ellenőrizzük, hogy a USE_JOB_QUEUE 'advanced' értékre van-e állítva
+if (isWorkerMode && !USE_ADVANCED_JOB_QUEUE) {
+    console.error('HIBA: A worker módban a USE_JOB_QUEUE környezeti változónak "advanced" értékre kell állítva lennie!');
+    console.error('A worker nem tud elindulni az InMemoryJobQueueStrategy-vel, csak a BullMQJobQueuePlugin-nel.');
+    console.error('Kérlek állítsd be a USE_JOB_QUEUE=advanced környezeti változót a worker szolgáltatásban.');
+    process.exit(1);
+}
+
+// Ellenőrizzük, hogy használunk-e worker szolgáltatást
+const useWorker = process.env.USE_WORKER === 'true';
+
+// Ha használunk worker szolgáltatást, akkor a fő szerveren is a BullMQJobQueuePlugin-t kell használni
+if (!isWorkerMode && useWorker && !USE_ADVANCED_JOB_QUEUE) {
+    console.error('HIBA: Ha worker szolgáltatást használsz (USE_WORKER=true), akkor a fő szerveren is a BullMQJobQueuePlugin-t kell használni!');
+    console.error('Kérlek állítsd be a USE_JOB_QUEUE=advanced környezeti változót a fő szerver szolgáltatásban is.');
+    process.exit(1);
+}
+
+// Redis kapcsolati adatok - csak a Railway által biztosított környezeti változókat használjuk
+// Worker módban és ha USE_JOB_QUEUE=advanced, akkor ellenőrizzük, hogy a Redis környezeti változók be vannak-e állítva
+if ((isWorkerMode || USE_ADVANCED_JOB_QUEUE) && !process.env.REDISHOST) {
+    throw new Error('REDISHOST környezeti változó nincs beállítva! A Redis kapcsolathoz szükséges.');
+}
+if ((isWorkerMode || USE_ADVANCED_JOB_QUEUE) && !process.env.REDISPORT) {
+    throw new Error('REDISPORT környezeti változó nincs beállítva! A Redis kapcsolathoz szükséges.');
+}
+const redisHost = process.env.REDISHOST!;
+const redisPort = +process.env.REDISPORT!;
+const redisPassword = process.env.REDISPASSWORD;
+
+// PORT környezeti változó ellenőrzése - hiba, ha nincs beállítva
+if (!process.env.PORT) {
+    throw new Error('PORT környezeti változó nincs beállítva!');
+}
+const serverPort = +process.env.PORT; // Használjuk a .env-ből érkező PORT-ot
 
 
 
@@ -149,22 +184,21 @@ export const config: VendureConfig = {
     
     plugins: isWorkerMode ? [
         // Worker módban csak a szükséges plugineket inicializáljuk
-        // Job Queue plugin kiválasztása a környezeti változó alapján
-        // Ez szükséges a worker módban
-        ...(USE_ADVANCED_JOB_QUEUE ? [
-            BullMQJobQueuePlugin.init({
-                connection: {
-                    host: process.env.REDIS_HOST || 'localhost',
-                    port: +(process.env.REDIS_PORT || 6379),
-                }
-            })
-        ] : []),
+        
+        // Worker módban mindig a BullMQJobQueuePlugin-t használjuk
+        // Az InMemoryJobQueueStrategy nem működik worker módban
+        BullMQJobQueuePlugin.init({
+            connection: {
+                host: redisHost,
+                port: redisPort,
+                ...(redisPassword ? { password: redisPassword } : {}),
+            }
+        }),
             
-        // Search plugin kiválasztása a környezeti változó alapján
-        // Az ElasticsearchPlugin nincs telepítve, ezért mindig a DefaultSearchPlugin-t használjuk
+        // DefaultSearchPlugin szükséges a keresési index frissítéséhez
         DefaultSearchPlugin,
         
-        // EmailPlugin hozzáadása a worker módban is, mivel az email küldés a worker feladata
+        // EmailPlugin szükséges, mivel az email küldés a worker feladata
         EmailPlugin.init({
             devMode: process.env.USE_EMAIL !== 'advanced' ? true : false as true,
             outputPath: path.join(__dirname, '../static/email/test-emails'),
@@ -284,12 +318,13 @@ export const config: VendureConfig = {
         // DefaultSchedulerPlugin.init(),
 
         // Job Queue plugin kiválasztása a környezeti változó alapján
+        // Ha a worker módban advanced-et használunk, akkor itt is azt kell használnunk
         ...(USE_ADVANCED_JOB_QUEUE ? [
             BullMQJobQueuePlugin.init({
                 connection: {
-                    host: process.env.REDIS_HOST,
-                    port: +process.env.REDIS_PORT!,
-                    password: process.env.REDIS_PASSWORD,
+                    host: redisHost,
+                    port: redisPort,
+                    ...(redisPassword ? { password: redisPassword } : {}),
                 }
             }),
         ] : [
