@@ -394,6 +394,9 @@ export const config: VendureConfig = {
             
         // Itt volt korábban a VPS asset pluginek konfigurációja, de eltávolítottuk
 
+        // Email küldés részletes naplózása
+        console.log('Email küldés részletes naplózása aktiválva');
+        
         EmailPlugin.init({
             devMode: process.env.USE_EMAIL !== 'advanced' ? true : false as true, // Ha nem advanced, akkor devMode
             outputPath: path.join(__dirname, '../static/email/test-emails'),
