@@ -129,8 +129,10 @@ let redisPassword: string | undefined;
 const useRedisUrl = !!process.env.REDIS_URL;
 
 if (useRedisUrl) {
-    // Ha van REDIS_URL, akkor azt használjuk
-    console.log('Redis URL használata a kapcsolathoz:', process.env.REDIS_URL);
+    // Ha van REDIS_URL, akkor azt használjuk, de hozzáadjuk a family=0 paramétert az IPv4/IPv6 kompatibilitásért
+    // Ez megoldja a "getaddrinfo ENOTFOUND redis.railway.internal" hibát
+    const redisUrlWithFamily = process.env.REDIS_URL + '?family=0';
+    console.log('Redis URL használata a kapcsolathoz (IPv4/IPv6 kompatibilitással):', redisUrlWithFamily);
     // Nem kell külön kinyerni a host, port, password értékeket, mert a URL-t fogjuk használni
 } else {
     // Ha nincs REDIS_URL, akkor a különálló változókat használjuk
@@ -207,8 +209,8 @@ export const config: VendureConfig = {
             // A BullMQJobQueuePlugin a bullmq csomagon alapul, ami támogatja a Redis URL-t is
             // https://github.com/taskforcesh/bullmq/blob/master/docs/gitbook/api/bullmq.queueoptions.connection.md
             connection: useRedisUrl ? 
-                // Ha van REDIS_URL, akkor azt használjuk
-                { url: process.env.REDIS_URL } : 
+                // Ha van REDIS_URL, akkor azt használjuk a family=0 paraméterrel az IPv4/IPv6 kompatibilitásért
+                { url: process.env.REDIS_URL + '?family=0' } : 
                 // Ha nincs, akkor a különálló paramétereket használjuk
                 {
                     host: redisHost,
@@ -346,8 +348,8 @@ export const config: VendureConfig = {
                 // A BullMQJobQueuePlugin a bullmq csomagon alapul, ami támogatja a Redis URL-t is
                 // https://github.com/taskforcesh/bullmq/blob/master/docs/gitbook/api/bullmq.queueoptions.connection.md
                 connection: useRedisUrl ? 
-                    // Ha van REDIS_URL, akkor azt használjuk
-                    { url: process.env.REDIS_URL } : 
+                    // Ha van REDIS_URL, akkor azt használjuk a family=0 paraméterrel az IPv4/IPv6 kompatibilitásért
+                    { url: process.env.REDIS_URL + '?family=0' } : 
                     // Ha nincs, akkor a különálló paramétereket használjuk
                     {
                         host: redisHost,
