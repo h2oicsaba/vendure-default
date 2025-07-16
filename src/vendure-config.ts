@@ -117,17 +117,33 @@ if (!isWorkerMode && useWorker && !USE_ADVANCED_JOB_QUEUE) {
     process.exit(1);
 }
 
-// Redis kapcsolati adatok - csak a Railway által biztosított környezeti változókat használjuk
-// Worker módban és ha USE_JOB_QUEUE=advanced, akkor ellenőrizzük, hogy a Redis környezeti változók be vannak-e állítva
-if ((isWorkerMode || USE_ADVANCED_JOB_QUEUE) && !process.env.REDISHOST) {
-    throw new Error('REDISHOST környezeti változó nincs beállítva! A Redis kapcsolathoz szükséges.');
+// Redis kapcsolati adatok - Railway által biztosított környezeti változókat használjuk
+// Először ellenőrizzük, hogy van-e REDIS_URL, ha nincs, akkor a különálló változókat használjuk
+
+// Alapbeállítások inicializálása
+let redisHost = '';
+let redisPort = 6379;
+let redisPassword: string | undefined;
+
+// Ellenőrizzük, hogy van-e REDIS_URL
+const useRedisUrl = !!process.env.REDIS_URL;
+
+if (useRedisUrl) {
+    // Ha van REDIS_URL, akkor azt használjuk
+    console.log('Redis URL használata a kapcsolathoz:', process.env.REDIS_URL);
+    // Nem kell külön kinyerni a host, port, password értékeket, mert a URL-t fogjuk használni
+} else {
+    // Ha nincs REDIS_URL, akkor a különálló változókat használjuk
+    if ((isWorkerMode || USE_ADVANCED_JOB_QUEUE) && !process.env.REDISHOST) {
+        throw new Error('REDISHOST környezeti változó nincs beállítva! A Redis kapcsolathoz szükséges.');
+    }
+    if ((isWorkerMode || USE_ADVANCED_JOB_QUEUE) && !process.env.REDISPORT) {
+        throw new Error('REDISPORT környezeti változó nincs beállítva! A Redis kapcsolathoz szükséges.');
+    }
+    redisHost = process.env.REDISHOST!;
+    redisPort = +process.env.REDISPORT!;
+    redisPassword = process.env.REDISPASSWORD;
 }
-if ((isWorkerMode || USE_ADVANCED_JOB_QUEUE) && !process.env.REDISPORT) {
-    throw new Error('REDISPORT környezeti változó nincs beállítva! A Redis kapcsolathoz szükséges.');
-}
-const redisHost = process.env.REDISHOST!;
-const redisPort = +process.env.REDISPORT!;
-const redisPassword = process.env.REDISPASSWORD;
 
 // PORT környezeti változó ellenőrzése - hiba, ha nincs beállítva
 if (!process.env.PORT) {
@@ -188,11 +204,17 @@ export const config: VendureConfig = {
         // Worker módban mindig a BullMQJobQueuePlugin-t használjuk
         // Az InMemoryJobQueueStrategy nem működik worker módban
         BullMQJobQueuePlugin.init({
-            connection: {
-                host: redisHost,
-                port: redisPort,
-                ...(redisPassword ? { password: redisPassword } : {}),
-            }
+            // A BullMQJobQueuePlugin a bullmq csomagon alapul, ami támogatja a Redis URL-t is
+            // https://github.com/taskforcesh/bullmq/blob/master/docs/gitbook/api/bullmq.queueoptions.connection.md
+            connection: useRedisUrl ? 
+                // Ha van REDIS_URL, akkor azt használjuk
+                { url: process.env.REDIS_URL } : 
+                // Ha nincs, akkor a különálló paramétereket használjuk
+                {
+                    host: redisHost,
+                    port: redisPort,
+                    ...(redisPassword ? { password: redisPassword } : {}),
+                }
         }),
             
         // DefaultSearchPlugin szükséges a keresési index frissítéséhez
@@ -321,11 +343,17 @@ export const config: VendureConfig = {
         // Ha a worker módban advanced-et használunk, akkor itt is azt kell használnunk
         ...(USE_ADVANCED_JOB_QUEUE ? [
             BullMQJobQueuePlugin.init({
-                connection: {
-                    host: redisHost,
-                    port: redisPort,
-                    ...(redisPassword ? { password: redisPassword } : {}),
-                }
+                // A BullMQJobQueuePlugin a bullmq csomagon alapul, ami támogatja a Redis URL-t is
+                // https://github.com/taskforcesh/bullmq/blob/master/docs/gitbook/api/bullmq.queueoptions.connection.md
+                connection: useRedisUrl ? 
+                    // Ha van REDIS_URL, akkor azt használjuk
+                    { url: process.env.REDIS_URL } : 
+                    // Ha nincs, akkor a különálló paramétereket használjuk
+                    {
+                        host: redisHost,
+                        port: redisPort,
+                        ...(redisPassword ? { password: redisPassword } : {}),
+                    }
             }),
         ] : [
             DefaultJobQueuePlugin.init({ useDatabaseForBuffer: true }),
