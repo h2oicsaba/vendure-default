@@ -124,16 +124,42 @@ if (!isWorkerMode && useWorker && !USE_ADVANCED_JOB_QUEUE) {
 let redisHost = '';
 let redisPort = 6379;
 let redisPassword: string | undefined;
+let redisUsername: string | undefined;
 
 // Ellenőrizzük, hogy van-e REDIS_URL
 const useRedisUrl = !!process.env.REDIS_URL;
 
 if (useRedisUrl) {
-    // Ha van REDIS_URL, akkor azt használjuk, de hozzáadjuk a family=0 paramétert az IPv4/IPv6 kompatibilitásért
-    // Ez megoldja a "getaddrinfo ENOTFOUND redis.railway.internal" hibát
-    const redisUrlWithFamily = process.env.REDIS_URL + '?family=0';
-    console.log('Redis URL használata a kapcsolathoz (IPv4/IPv6 kompatibilitással):', redisUrlWithFamily);
-    // Nem kell külön kinyerni a host, port, password értékeket, mert a URL-t fogjuk használni
+    try {
+        // Kinyerjük a Redis URL-ből a kapcsolati paramétereket
+        console.log('Redis URL feldolgozása:', process.env.REDIS_URL);
+        
+        // Redis URL formátum: redis://username:password@host:port
+        const redisUrl = new URL(process.env.REDIS_URL!);
+        
+        // Kinyerjük a host, port, username, password értékeket
+        redisHost = redisUrl.hostname;
+        redisPort = parseInt(redisUrl.port || '6379', 10);
+        
+        // Felhasználónév és jelszó kinyerjése
+        if (redisUrl.username) {
+            redisUsername = redisUrl.username;
+        }
+        
+        if (redisUrl.password) {
+            redisPassword = redisUrl.password;
+        }
+        
+        console.log('Redis kapcsolati paraméterek kinyerve az URL-ből:', {
+            host: redisHost,
+            port: redisPort,
+            username: redisUsername ? '***' : undefined,
+            password: redisPassword ? '***' : undefined
+        });
+    } catch (error) {
+        console.error('Hiba a Redis URL feldolgozása során:', error);
+        throw new Error('Hiba a Redis URL feldolgozása során: ' + (error instanceof Error ? error.message : String(error)));
+    }
 } else {
     // Ha nincs REDIS_URL, akkor a különálló változókat használjuk
     if ((isWorkerMode || USE_ADVANCED_JOB_QUEUE) && !process.env.REDISHOST) {
@@ -145,6 +171,7 @@ if (useRedisUrl) {
     redisHost = process.env.REDISHOST!;
     redisPort = +process.env.REDISPORT!;
     redisPassword = process.env.REDISPASSWORD;
+    redisUsername = process.env.REDISUSER;
 }
 
 // PORT környezeti változó ellenőrzése - hiba, ha nincs beállítva
@@ -206,17 +233,19 @@ export const config: VendureConfig = {
         // Worker módban mindig a BullMQJobQueuePlugin-t használjuk
         // Az InMemoryJobQueueStrategy nem működik worker módban
         BullMQJobQueuePlugin.init({
-            // A BullMQJobQueuePlugin a bullmq csomagon alapul, ami támogatja a Redis URL-t is
-            // https://github.com/taskforcesh/bullmq/blob/master/docs/gitbook/api/bullmq.queueoptions.connection.md
-            connection: useRedisUrl ? 
-                // Ha van REDIS_URL, akkor azt használjuk a family=0 paraméterrel az IPv4/IPv6 kompatibilitásért
-                { url: process.env.REDIS_URL + '?family=0' } : 
-                // Ha nincs, akkor a különálló paramétereket használjuk
-                {
-                    host: redisHost,
-                    port: redisPort,
-                    ...(redisPassword ? { password: redisPassword } : {}),
-                }
+            // A BullMQJobQueuePlugin a bullmq csomagon alapul
+            // Explicit módon adjuk meg a kapcsolati paramétereket a problémák elkerülése érdekében
+            connection: {
+                host: redisHost,
+                port: redisPort,
+                username: redisUsername,
+                password: redisPassword,
+                family: 0, // IPv4/IPv6 kompatibilitás
+                enableOfflineQueue: false, // Hiba esetén ne próbálkozzon újra
+                maxRetriesPerRequest: 3, // Maximális újrapróbálkozások száma
+                connectTimeout: 10000, // 10 másodperc kapcsolódási időtúllépés
+                enableReadyCheck: true, // Ellenőrizze, hogy a Redis szerver kész-e
+            }
         }),
             
         // DefaultSearchPlugin szükséges a keresési index frissítéséhez
@@ -345,17 +374,19 @@ export const config: VendureConfig = {
         // Ha a worker módban advanced-et használunk, akkor itt is azt kell használnunk
         ...(USE_ADVANCED_JOB_QUEUE ? [
             BullMQJobQueuePlugin.init({
-                // A BullMQJobQueuePlugin a bullmq csomagon alapul, ami támogatja a Redis URL-t is
-                // https://github.com/taskforcesh/bullmq/blob/master/docs/gitbook/api/bullmq.queueoptions.connection.md
-                connection: useRedisUrl ? 
-                    // Ha van REDIS_URL, akkor azt használjuk a family=0 paraméterrel az IPv4/IPv6 kompatibilitásért
-                    { url: process.env.REDIS_URL + '?family=0' } : 
-                    // Ha nincs, akkor a különálló paramétereket használjuk
-                    {
-                        host: redisHost,
-                        port: redisPort,
-                        ...(redisPassword ? { password: redisPassword } : {}),
-                    }
+                // A BullMQJobQueuePlugin a bullmq csomagon alapul
+                // Explicit módon adjuk meg a kapcsolati paramétereket a problémák elkerülése érdekében
+                connection: {
+                    host: redisHost,
+                    port: redisPort,
+                    username: redisUsername,
+                    password: redisPassword,
+                    family: 0, // IPv4/IPv6 kompatibilitás
+                    enableOfflineQueue: false, // Hiba esetén ne próbálkozzon újra
+                    maxRetriesPerRequest: 3, // Maximális újrapróbálkozások száma
+                    connectTimeout: 10000, // 10 másodperc kapcsolódási időtúllépés
+                    enableReadyCheck: true, // Ellenőrizze, hogy a Redis szerver kész-e
+                }
             }),
         ] : [
             DefaultJobQueuePlugin.init({ useDatabaseForBuffer: true }),
