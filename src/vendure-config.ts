@@ -2,6 +2,8 @@
 
 import 'dotenv/config'; // Fontos, hogy ez legyen az ELSŐ import, hogy a .env változók betöltődjenek
 
+import { NativeAuthenticationStrategy } from '@vendure/core';
+
 // Ellenőrizzük, hogy worker módban fut-e az alkalmazás
 // Elsősorban a WORKER_MODE környezeti változót használjuk
 const isWorkerMode = process.env.WORKER_MODE === 'true';
@@ -207,6 +209,10 @@ export const config: VendureConfig = {
           secure: !IS_DEV,
           sameSite: 'strict',
         },
+        // Explicit módon engedélyezzük a regisztrációs email küldést
+        shopAuthenticationStrategy: [
+            new NativeAuthenticationStrategy(),
+        ],
     },
     dbConnectionOptions: {
         type: 'postgres', // Maradhat 'postgres'
