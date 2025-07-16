@@ -250,7 +250,6 @@ export const config: VendureConfig = {
             
         // DefaultSearchPlugin szükséges a keresési index frissítéséhez
         DefaultSearchPlugin,
-        
         // EmailPlugin szükséges, mivel az email küldés a worker feladata
         EmailPlugin.init({
             devMode: process.env.USE_EMAIL !== 'advanced' ? true : false as true,
@@ -391,11 +390,8 @@ export const config: VendureConfig = {
         ] : [
             DefaultJobQueuePlugin.init({ useDatabaseForBuffer: true }),
         ]),
-            
-        // Itt volt korábban a VPS asset pluginek konfigurációja, de eltávolítottuk
-
-        // Email küldés részletes naplózása
-        console.log('Email küldés részletes naplózása aktiválva');
+        
+        // Normál módban az összes plugint inicializáljuk
         
         EmailPlugin.init({
             devMode: process.env.USE_EMAIL !== 'advanced' ? true : false as true, // Ha nem advanced, akkor devMode
