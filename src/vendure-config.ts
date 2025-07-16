@@ -242,7 +242,7 @@ export const config: VendureConfig = {
                 password: redisPassword,
                 family: 0, // IPv4/IPv6 kompatibilitás
                 enableOfflineQueue: false, // Hiba esetén ne próbálkozzon újra
-                maxRetriesPerRequest: 3, // Maximális újrapróbálkozások száma
+                maxRetriesPerRequest: null, // BullMQ megköveteli, hogy ez null legyen
                 connectTimeout: 10000, // 10 másodperc kapcsolódási időtúllépés
                 enableReadyCheck: true, // Ellenőrizze, hogy a Redis szerver kész-e
             }
@@ -383,7 +383,7 @@ export const config: VendureConfig = {
                     password: redisPassword,
                     family: 0, // IPv4/IPv6 kompatibilitás
                     enableOfflineQueue: false, // Hiba esetén ne próbálkozzon újra
-                    maxRetriesPerRequest: 3, // Maximális újrapróbálkozások száma
+                    maxRetriesPerRequest: null, // BullMQ megköveteli, hogy ez null legyen
                     connectTimeout: 10000, // 10 másodperc kapcsolódási időtúllépés
                     enableReadyCheck: true, // Ellenőrizze, hogy a Redis szerver kész-e
                 }
